@@ -36,7 +36,11 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerFlow API v1");
+            c.RoutePrefix = "swagger";
+        });
     }
 
     app.UseHttpsRedirection();

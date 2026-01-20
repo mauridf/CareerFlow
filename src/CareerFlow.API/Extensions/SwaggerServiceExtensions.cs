@@ -1,5 +1,4 @@
 ﻿using Microsoft.OpenApi;
-using Microsoft.OpenApi.Models;
 
 namespace CareerFlow.API.Extensions;
 
@@ -16,33 +15,25 @@ public static class SwaggerServiceExtensions
                 Description = "API for professional career management and CV/Resume building",
                 Contact = new OpenApiContact
                 {
-                    Name = "CareerFlow Team",
-                    Email = "support@careerflow.com"
+                    Name = "Maurício Carvalho Developer",
+                    Email = "mauricio.carvalho.developer@gmail.com"
                 }
             });
 
-            // Configurar segurança JWT no Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Informe o token JWT no formato: Bearer {token}"
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            // JEITO CERTO NO .NET 10 + Swashbuckle 10.x
+            c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
             {
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
+                    new OpenApiSecuritySchemeReference("Bearer"),
+                    new List<string>()
                 }
             });
         });
