@@ -3,4 +3,5 @@
   <Project Path="src/CareerFlow.Application/CareerFlow.Application.csproj" />
   <Project Path="src/CareerFlow.Domain/CareerFlow.Domain.csproj" />
   <Project Path="src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj" />
+  <Project Path="tests/CareerFlow.Tests/CareerFlow.Tests.csproj" />
 </Solution>
