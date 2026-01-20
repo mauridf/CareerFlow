@@ -1,1 +1,6 @@
-<Solution />
+<Solution>
+  <Project Path="src/CareerFlow.API/CareerFlow.API.csproj" />
+  <Project Path="src/CareerFlow.Application/CareerFlow.Application.csproj" />
+  <Project Path="src/CareerFlow.Domain/CareerFlow.Domain.csproj" />
+  <Project Path="src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj" />
+</Solution>
