@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Domain.Common;
-using CareerFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,12 +8,12 @@ namespace CareerFlow.Application.Common;
 
 public abstract class ServiceBase
 {
-    protected readonly ApplicationDbContext _context;
+    protected readonly IApplicationDbContext _context;
     protected readonly IMapper _mapper;
     protected readonly ILogger _logger;
 
     protected ServiceBase(
-        ApplicationDbContext context,
+        IApplicationDbContext context,
         IMapper mapper,
         ILogger logger)
     {

@@ -26,10 +26,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.Name));
 
         CreateMap<CreateSkillDto, Skill>()
-            .ForMember(dest => dest.Type, opt => opt.MapFrom(src =>
-                SkillType.TryFromName(src.Type, out var type) ? type : SkillType.TOOLS))
-            .ForMember(dest => dest.Level, opt => opt.MapFrom(src =>
-                SkillLevel.TryFromName(src.Level, out var level) ? level : SkillLevel.BASIC));
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => GetSkillType(src.Type)))
+            .ForMember(dest => dest.Level, opt => opt.MapFrom(src => GetSkillLevel(src.Level)));
 
         // Professional Experience mappings
         CreateMap<ProfessionalExperience, ProfessionalExperienceDto>()
@@ -46,8 +44,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsCurrent, opt => opt.MapFrom(src => src.IsCurrent));
 
         CreateMap<CreateAcademicBackgroundDto, AcademicBackground>()
-            .ForMember(dest => dest.Level, opt => opt.MapFrom(src =>
-                EducationLevel.TryFromName(src.Level, out var level) ? level : EducationLevel.GRADUATION));
+            .ForMember(dest => dest.Level, opt => opt.MapFrom(src => GetEducationLevel(src.Level)));
 
         // Certificate mappings
         CreateMap<Certificate, CertificateDto>()
@@ -60,8 +57,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.Name));
 
         CreateMap<CreateLanguageDto, Language>()
-            .ForMember(dest => dest.Level, opt => opt.MapFrom(src =>
-                LanguageLevel.TryFromName(src.Level, out var level) ? level : LanguageLevel.BASIC));
+            .ForMember(dest => dest.Level, opt => opt.MapFrom(src => GetLanguageLevel(src.Level)));
 
         // Social Media mappings
         CreateMap<SocialMedia, SocialMediaDto>();
@@ -71,5 +67,26 @@ public class MappingProfile : Profile
         CreateMap<Skill, SkillDistributionDto>()
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.Name))
             .ForMember(dest => dest.Count, opt => opt.MapFrom(src => 1));
+    }
+
+    // Métodos auxiliares do 'out' parameter
+    private SkillType GetSkillType(string typeName)
+    {
+        return SkillType.TryFromName(typeName, out var type) ? type : SkillType.TOOLS;
+    }
+
+    private SkillLevel GetSkillLevel(string levelName)
+    {
+        return SkillLevel.TryFromName(levelName, out var level) ? level : SkillLevel.BASIC;
+    }
+
+    private EducationLevel GetEducationLevel(string levelName)
+    {
+        return EducationLevel.TryFromName(levelName, out var level) ? level : EducationLevel.GRADUATION;
+    }
+
+    private LanguageLevel GetLanguageLevel(string levelName)
+    {
+        return LanguageLevel.TryFromName(levelName, out var level) ? level : LanguageLevel.BASIC;
     }
 }

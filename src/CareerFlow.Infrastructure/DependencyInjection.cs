@@ -1,4 +1,5 @@
-﻿using CareerFlow.Infrastructure.Data;
+﻿using CareerFlow.Application.Common.Interfaces;
+using CareerFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,8 @@ public static class DependencyInjection
             options.UseNpgsql(
                 connectionString,
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+
+        services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 
         return services;
     }
