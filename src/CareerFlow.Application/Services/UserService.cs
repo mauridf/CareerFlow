@@ -14,17 +14,20 @@ public class UserService : ServiceBase, IUserService
 {
     private readonly IJwtTokenGenerator _tokenGenerator;
     private readonly JwtSettings _jwtSettings;
+    private readonly IFileStorageService _fileStorageService;
 
     public UserService(
         IApplicationDbContext context,
         IMapper mapper,
         ILogger<UserService> logger,
         IJwtTokenGenerator tokenGenerator,
-        IOptions<JwtSettings> jwtSettings)
+        IOptions<JwtSettings> jwtSettings,
+        IFileStorageService fileStorageService)
         : base(context, mapper, logger)
     {
         _tokenGenerator = tokenGenerator;
         _jwtSettings = jwtSettings.Value;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<UserDto> GetByIdAsync(Guid id)
@@ -86,11 +89,21 @@ public class UserService : ServiceBase, IUserService
         if (!string.IsNullOrEmpty(updateUserDto.State))
             user.State = updateUserDto.State;
 
-        // TODO: Lidar com upload de foto
-        // if (updateUserDto.Photo != null)
-        // {
-        //     user.PhotoPath = await SaveFileAsync(updateUserDto.Photo);
-        // }
+        // Lidar com upload de foto
+        if (updateUserDto.Photo != null)
+        {
+            // Deletar foto antiga se existir
+            if (!string.IsNullOrEmpty(user.PhotoPath))
+            {
+                await _fileStorageService.DeleteFileAsync(user.PhotoPath);
+            }
+
+            // Salvar nova foto
+            user.PhotoPath = await _fileStorageService.SaveFileAsync(
+                updateUserDto.Photo,
+                "photos",
+                user.Id);
+        }
 
         _context.Users.Update(user);
         await _context.SaveChangesAsync();

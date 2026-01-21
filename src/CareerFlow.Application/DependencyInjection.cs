@@ -18,6 +18,9 @@ public static class DependencyInjection
 
         // Registrar serviços
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<IATSResumeService, ATSResumeService>();
+
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISkillService, SkillService>();
