@@ -3,5 +3,7 @@
   <Project Path="src/CareerFlow.Application/CareerFlow.Application.csproj" />
   <Project Path="src/CareerFlow.Domain/CareerFlow.Domain.csproj" />
   <Project Path="src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj" />
-  <Project Path="tests/CareerFlow.Tests/CareerFlow.Tests.csproj" />
+  <Project Path="tests/CareerFlow.API.Tests/CareerFlow.API.Tests.csproj" Id="20d21c68-2105-4573-8b67-2e87fb471a61" />
+  <Project Path="tests/CareerFlow.Application.Tests/CareerFlow.Application.Tests.csproj" Id="1b5b952a-0040-40e6-97f5-3b86aa93190c" />
+  <Project Path="tests/CareerFlow.Domain.Tests/CareerFlow.Domain.Tests.csproj" Id="ab39d938-64b3-4c7b-acc4-0047e81aaa4a" />
 </Solution>

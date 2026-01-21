@@ -1,0 +1,12 @@
+[phases.setup]
+cmds = ["dotnet restore"]
+
+[phases.build]
+cmds = ["dotnet publish -c Release -o /app"]
+
+[start]
+cmd = "dotnet /app/CareerFlow.API.dll"
+
+[environment]
+PORT = 8080
+ASPNETCORE_URLS = "http://*:$PORT"
