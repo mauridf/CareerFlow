@@ -21,12 +21,10 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISkillService, SkillService>();
-
-        // TODO: Registrar outros serviços quando implementados
-        // services.AddScoped<IExperienceService, ExperienceService>();
-        // services.AddScoped<IAcademicService, AcademicService>();
-        // services.AddScoped<ICertificateService, CertificateService>();
-        // services.AddScoped<ILanguageService, LanguageService>();
+        services.AddScoped<IExperienceService, ExperienceService>();
+        services.AddScoped<IAcademicService, AcademicService>();
+        services.AddScoped<ICertificateService, CertificateService>();
+        services.AddScoped<ILanguageService, LanguageService>();
 
         return services;
     }
