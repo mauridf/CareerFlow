@@ -11,7 +11,17 @@ using Serilog;
 // Carregar .env file
 Env.Load();
 
+var isRender = Environment.GetEnvironmentVariable("RENDER") != null;
+var port = Environment.GetEnvironmentVariable("PORT");
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+if (isRender && !string.IsNullOrEmpty(port))
+{
+    // Para Render, usar a porta definida
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
 
 // Configurar Serilog para logging
 Log.Logger = new LoggerConfiguration()
