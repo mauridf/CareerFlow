@@ -30,10 +30,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\CareerFlow.Application\CareerFlow.Application.csproj" />
     <ProjectReference Include="..\CareerFlow.Domain\CareerFlow.Domain.csproj" />
     <ProjectReference Include="..\CareerFlow.Infrastructure\CareerFlow.Infrastructure.csproj" />

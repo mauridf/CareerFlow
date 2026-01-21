@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

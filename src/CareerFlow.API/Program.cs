@@ -1,8 +1,12 @@
+using System.Text;
 using CareerFlow.API.Extensions;
 using CareerFlow.API.Middleware;
+using CareerFlow.Domain.Common;
 using CareerFlow.Infrastructure;
-using Serilog;
 using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 // Carregar .env file
 Env.Load();
@@ -50,6 +54,34 @@ try
             c.RoutePrefix = "swagger";
         });
     }
+
+    // Configurar JWT
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    builder.Services.Configure<JwtSettings>(jwtSettings);
+
+    var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]!);
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+    builder.Services.AddAuthorization();
 
     app.UseHttpsRedirection();
 

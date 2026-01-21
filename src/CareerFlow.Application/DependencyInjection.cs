@@ -1,4 +1,7 @@
-﻿using FluentValidation;
+﻿using CareerFlow.Application.Common;
+using CareerFlow.Application.Interfaces;
+using CareerFlow.Application.Services;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CareerFlow.Application;
@@ -13,10 +16,17 @@ public static class DependencyInjection
         // Registrar FluentValidation
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
-        // Registrar serviços (serão implementados no próximo passo)
-        // services.AddScoped<IUserService, UserService>();
-        // services.AddScoped<ISkillService, SkillService>();
-        // etc...
+        // Registrar serviços
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ISkillService, SkillService>();
+
+        // TODO: Registrar outros serviços quando implementados
+        // services.AddScoped<IExperienceService, ExperienceService>();
+        // services.AddScoped<IAcademicService, AcademicService>();
+        // services.AddScoped<ICertificateService, CertificateService>();
+        // services.AddScoped<ILanguageService, LanguageService>();
 
         return services;
     }
