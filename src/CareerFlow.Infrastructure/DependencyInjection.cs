@@ -1,4 +1,4 @@
-﻿using CareerFlow.Application.Common.Interfaces;
+﻿using CareerFlow.Domain.Common;
 using CareerFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

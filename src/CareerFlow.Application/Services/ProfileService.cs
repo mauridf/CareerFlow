@@ -104,52 +104,10 @@ public class ProfileService : ServiceBase, IProfileService
     {
         var stats = new DashboardStatsDto();
 
-        // Contagens básicas
-        stats.TotalSkills = await _context.Skills
-            .CountAsync(s => s.UserId == userId);
-
-        stats.TotalExperiences = await _context.ProfessionalExperiences
-            .CountAsync(pe => pe.UserId == userId);
-
-        stats.TotalCertificates = await _context.Certificates
-            .CountAsync(c => c.UserId == userId);
-
-        stats.TotalLanguages = await _context.Languages
-            .CountAsync(l => l.UserId == userId);
-
-        // Distribuição de skills
-        var skillGroups = await _context.Skills
-            .Where(s => s.UserId == userId)
-            .GroupBy(s => s.Type.Name)
-            .Select(g => new { Type = g.Key, Count = g.Count() })
-            .ToListAsync();
-
-        var totalSkills = stats.TotalSkills > 0 ? stats.TotalSkills : 1;
-
-        stats.SkillDistribution = skillGroups.Select(g => new SkillDistributionDto
-        {
-            Type = g.Type,
-            Count = g.Count,
-            Percentage = (int)Math.Round((g.Count * 100.0) / totalSkills)
-        }).ToList();
-
-        // Próximas expirações
-        var upcomingCertificates = await _context.Certificates
-            .Where(c => c.UserId == userId && c.EndDate.HasValue && c.EndDate > DateTime.UtcNow)
-            .OrderBy(c => c.EndDate)
-            .Take(5)
-            .ToListAsync();
-
-        stats.UpcomingExpirations = upcomingCertificates.Select(c => new UpcomingExpirationDto
-        {
-            Name = c.Name,
-            Type = "certificate",
-            ExpirationDate = c.EndDate,
-            DaysUntilExpiration = c.EndDate.HasValue ? (c.EndDate.Value - DateTime.UtcNow).Days : 0
-        }).ToList();
+        // ... código anterior ...
 
         // Calcular completude do perfil (simplificado)
-        var profileCompleteness = CalculateProfileCompleteness(userId);
+        var profileCompleteness = await CalculateProfileCompleteness(userId); // ADICIONE AWAIT AQUI
         stats.ProfileCompleteness = profileCompleteness;
 
         return stats;
@@ -160,7 +118,7 @@ public class ProfileService : ServiceBase, IProfileService
         var completeness = 0;
         var totalFields = 10; // Número total de campos considerados
 
-        // Verificar campos obrigatórios
+        // Verificar campos obrigatórios - AGORA COM AWAIT
         var user = await _context.Users.FindAsync(userId);
         if (user != null)
         {

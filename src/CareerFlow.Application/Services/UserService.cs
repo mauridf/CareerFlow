@@ -58,7 +58,7 @@ public class UserService : ServiceBase, IUserService
             throw new InvalidOperationException($"Email {createUserDto.Email} já está em uso.");
 
         var user = _mapper.Map<User>(createUserDto);
-        user.PasswordHash = BCrypt.HashPassword(createUserDto.Password);
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -116,7 +116,7 @@ public class UserService : ServiceBase, IUserService
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-        if (user == null || !BCrypt.Verify(loginDto.Password, user.PasswordHash))
+        if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Email ou senha inválidos.");
 
         var token = _tokenGenerator.GenerateToken(user);
