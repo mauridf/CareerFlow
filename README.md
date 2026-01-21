@@ -14,7 +14,7 @@ API REST para gestão profissional e criação de currículos otimizados para AT
 ## 🏗️ Arquitetura
 
 - Clean Architecture com separação em camadas  
-- .NET 8.0 com ASP.NET Core Web API  
+- .NET 10 com ASP.NET Core Web API  
 - PostgreSQL com Entity Framework Core  
 - JWT Authentication para segurança  
 - AutoMapper para mapeamento de DTOs  
@@ -25,7 +25,7 @@ API REST para gestão profissional e criação de currículos otimizados para AT
 
 ### Pré-requisitos
 
-- .NET 8.0 SDK  
+- .NET 10 SDK  
 - Docker e Docker Compose (opcional)  
 - PostgreSQL 15+  
 
@@ -80,29 +80,6 @@ dotnet test tests/CareerFlow.Application.Tests
 dotnet test tests/CareerFlow.API.Tests
 ```
 
-## 🐳 Deploy no Railway
-
-1. Crie uma conta no Railway  
-2. Conecte seu repositório GitHub  
-3. Configure as variáveis de ambiente:
-   - `DATABASE_URL` (PostgreSQL connection string)
-   - `JWT_SECRET` (chave secreta para JWT)
-   - `JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_EXPIRY_MINUTES`
-4. Deploy automático será realizado  
-
-### Variáveis de Ambiente para Railway
-
-```env
-DATABASE_URL=postgresql://user:password@host:port/database
-JWT_SECRET=your-super-secret-key-at-least-32-characters-long
-JWT_ISSUER=CareerFlowAPI
-JWT_AUDIENCE=CareerFlowUsers
-JWT_EXPIRY_MINUTES=60
-FILE_STORAGE_PATH=uploads
-MAX_FILE_SIZE_MB=10
-FRONTEND_URL=https://seusite.com
-```
-
 ## 📁 Estrutura do Projeto
 
 ```text
@@ -134,7 +111,7 @@ CareerFlow/
 
 ## 🛠️ Tecnologias Utilizadas
 
-- .NET 8.0  
+- .NET 10  
 - ASP.NET Core  
 - Entity Framework Core  
 - PostgreSQL  
