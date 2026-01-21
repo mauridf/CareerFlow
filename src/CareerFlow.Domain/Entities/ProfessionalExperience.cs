@@ -1,4 +1,5 @@
-﻿using CareerFlow.Domain.Common;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using CareerFlow.Domain.Common;
 
 namespace CareerFlow.Domain.Entities;
 
@@ -17,5 +18,7 @@ public class ProfessionalExperience : BaseEntity
 
     // Navigation Properties
     public User User { get; set; } = null!;
-    public ICollection<Skill> Skills { get; set; } = new List<Skill>();
+    public ICollection<SkillExperience> SkillExperiences { get; set; } = new List<SkillExperience>();
+    [NotMapped] // Não mapear para o banco
+    public IEnumerable<Skill> Skills => SkillExperiences?.Select(se => se.Skill) ?? Enumerable.Empty<Skill>();
 }

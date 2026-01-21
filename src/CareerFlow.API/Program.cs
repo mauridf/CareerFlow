@@ -1,5 +1,6 @@
 using CareerFlow.API.Extensions;
 using CareerFlow.API.Middleware;
+using CareerFlow.Infrastructure;
 using Serilog;
 using DotNetEnv;
 
@@ -23,6 +24,9 @@ try
     // Add services to the container
     builder.Services.AddControllers();
 
+    // Add Infrastructure
+    builder.Services.AddInfrastructure(builder.Configuration);
+
     // Custom configurations
     builder.Services.AddSwaggerDocumentation();
 
@@ -31,6 +35,10 @@ try
     builder.Services.AddSwaggerGen();
 
     var app = builder.Build();
+
+    // Aplicar migrations e seed data
+    await app.ApplyMigrationsAndSeedAsync();
+
 
     // Configure the HTTP request pipeline
     if (app.Environment.IsDevelopment())
