@@ -1,4 +1,5 @@
-# render.yaml (CORRIGIDO - sem disk no free tier)
+# render.yaml (atualizado)
+version: 1
 services:
   - type: web
     name: careerflow-api
@@ -14,8 +15,9 @@ services:
       - key: PORT
         value: 8080
     healthCheckPath: /health
+    healthCheckTimeout: 60
     autoDeploy: true
-    # REMOVIDO: disk - não suportado no free tier
+    disk: null  # Explicitamente null para free tier
 
 databases:
   - name: careerflow-db

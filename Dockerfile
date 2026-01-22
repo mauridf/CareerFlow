@@ -1,34 +1,48 @@
-# Dockerfile (atualizado)
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Dockerfile CORRIGIDO para .NET 10 e Render
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY *.sln .
+# Copiar arquivos de solução (.sln) e projetos
+COPY *.sln ./
 COPY src/CareerFlow.API/*.csproj src/CareerFlow.API/
 COPY src/CareerFlow.Application/*.csproj src/CareerFlow.Application/
 COPY src/CareerFlow.Domain/*.csproj src/CareerFlow.Domain/
 COPY src/CareerFlow.Infrastructure/*.csproj src/CareerFlow.Infrastructure/
 
-RUN dotnet restore
+# Verificar se há arquivos copiados (para debug)
+RUN ls -la && ls -la src/CareerFlow.API/
 
+# Restaurar dependências especificando o arquivo de solução
+RUN dotnet restore "CareerFlow.sln"
+
+# Copiar código fonte
 COPY src/. ./src/
 
+# Build da aplicação
 WORKDIR /src/CareerFlow.API
 RUN dotnet publish -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
-# Instalar curl
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Instalar curl para health checks (versão mais leve)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Criar diretório TEMPORÁRIO para uploads (dentro do container)
+# Criar diretório para uploads (temporário no free tier)
 RUN mkdir -p /tmp/uploads && chmod 777 /tmp/uploads
 
+# Copiar aplicação publicada
 COPY --from=build /app/publish .
 
+# Expor porta padrão do Render
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+# Health check simplificado para Render
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
+# Entry point
 ENTRYPOINT ["dotnet", "CareerFlow.API.dll"]
