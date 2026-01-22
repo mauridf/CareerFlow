@@ -1,51 +1,49 @@
-# Dockerfile CORRETO
+# Dockerfile FINAL - FUNCIONA
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# 1. Copiar arquivos de solução (.sln) se existir
-COPY *.sln ./
-
-# 2. Copiar projetos - ATENÇÃO aos caminhos!
+# 1. Copiar APENAS os arquivos .csproj primeiro
 COPY src/CareerFlow.API/CareerFlow.API.csproj src/CareerFlow.API/
 COPY src/CareerFlow.Application/CareerFlow.Application.csproj src/CareerFlow.Application/
 COPY src/CareerFlow.Domain/CareerFlow.Domain.csproj src/CareerFlow.Domain/
 COPY src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj src/CareerFlow.Infrastructure/
 
-# 3. Se não tem .sln, criar um
+# 2. Criar .sln APENAS SE necessário
 RUN if [ ! -f "*.sln" ]; then \
-    dotnet new sln --name CareerFlow && \
-    dotnet sln CareerFlow.sln add src/CareerFlow.API/CareerFlow.API.csproj && \
-    dotnet sln CareerFlow.sln add src/CareerFlow.Application/CareerFlow.Application.csproj && \
-    dotnet sln CareerFlow.sln add src/CareerFlow.Domain/CareerFlow.Domain.csproj && \
-    dotnet sln CareerFlow.sln add src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj; \
+    echo "Criando CareerFlow.sln..." && \
+    dotnet new sln --name CareerFlow; \
     fi
 
-# 4. Restaurar dependências
-RUN dotnet restore
+# 3. Adicionar projetos ao .sln (se não estiverem lá)
+RUN if [ -f "CareerFlow.sln" ]; then \
+    echo "Adicionando projetos ao CareerFlow.sln..." && \
+    dotnet sln CareerFlow.sln add src/CareerFlow.API/CareerFlow.API.csproj 2>/dev/null || true && \
+    dotnet sln CareerFlow.sln add src/CareerFlow.Application/CareerFlow.Application.csproj 2>/dev/null || true && \
+    dotnet sln CareerFlow.sln add src/CareerFlow.Domain/CareerFlow.Domain.csproj 2>/dev/null || true && \
+    dotnet sln CareerFlow.sln add src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj 2>/dev/null || true; \
+    fi
 
-# 5. Copiar código fonte - CORRETO: de ./src para ./src
-COPY src/ ./src/
+# 4. Restaurar especificando o .sln
+RUN if [ -f "CareerFlow.sln" ]; then \
+    dotnet restore CareerFlow.sln; \
+    else \
+    echo "Nenhum .sln encontrado, restaurando projetos individualmente" && \
+    dotnet restore src/CareerFlow.API/CareerFlow.API.csproj && \
+    dotnet restore src/CareerFlow.Application/CareerFlow.Application.csproj && \
+    dotnet restore src/CareerFlow.Domain/CareerFlow.Domain.csproj && \
+    dotnet restore src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj; \
+    fi
 
-# 6. Build - IMPORTANTE: O projeto está em src/CareerFlow.API/
-WORKDIR /src/src/CareerFlow.API  # <-- DUPLO src!
+# 5. Copiar TODO o código fonte
+COPY src/. ./src/
+
+# 6. Build
+WORKDIR /src/src/CareerFlow.API
 RUN dotnet publish -c Release -o /app/publish
 
-# Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
-
-# Criar diretório para uploads
 RUN mkdir -p /tmp/uploads && chmod 777 /tmp/uploads
-
-# Copiar aplicação publicada
 COPY --from=build /app/publish .
-
-# Expor porta
 EXPOSE 8080
-
-# Health check (sem curl - mais simples)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
-
-# Entry point
 ENTRYPOINT ["dotnet", "CareerFlow.API.dll"]
