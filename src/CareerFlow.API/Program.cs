@@ -7,15 +7,20 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using DotNetEnv;
 
-// Carregar variáveis de ambiente
-Env.Load();
+// Carregar variáveis de ambiente do .env (se existir)
+if (File.Exists(".env"))
+{
+    Env.Load();
+}
+else
+{
+    Console.WriteLine("ℹ️ Arquivo .env não encontrado, usando variáveis de ambiente do sistema");
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// Configurar para Render
+// Configurar para Render APENAS se detectado
 var isRender = Environment.GetEnvironmentVariable("RENDER") != null;
 var port = Environment.GetEnvironmentVariable("PORT");
 
@@ -23,82 +28,68 @@ if (isRender && !string.IsNullOrEmpty(port))
 {
     builder.WebHost.UseUrls($"http://*:{port}");
     Console.WriteLine($"🚀 Render Environment Detected - Port: {port}");
-}
 
-// SEÇÃO CRÍTICA: Converter DATABASE_URL
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-    try
+    // NO RENDER: Processar DATABASE_URL
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
     {
-        Console.WriteLine($"📦 DATABASE_URL encontrada: {databaseUrl.Substring(0, Math.Min(databaseUrl.Length, 50))}...");
-
-        // CORREÇÃO 1: Se não tem :5432, adiciona antes do /
-        if (!databaseUrl.Contains(":5432") && !databaseUrl.Contains(":"))
+        try
         {
-            // Encontra a posição do @ e do /
-            var atIndex = databaseUrl.IndexOf('@');
-            var slashIndex = databaseUrl.IndexOf('/', atIndex);
+            Console.WriteLine($"📦 Processando DATABASE_URL do Render...");
 
-            if (atIndex > 0 && slashIndex > 0)
+            // Parse da URL do Render
+            var uri = new Uri(databaseUrl);
+            var host = uri.Host;
+
+            // Adicionar domínio completo se necessário (Render específico)
+            if (host.StartsWith("dpg-") && !host.Contains("."))
             {
-                databaseUrl = databaseUrl.Insert(slashIndex, ":5432");
-                Console.WriteLine($"🔧 Porta 5432 adicionada: {databaseUrl}");
+                host += ".oregon-postgres.render.com"; // Ajuste para sua região
+                Console.WriteLine($"🌐 Hostname do Render ajustado: {host}");
             }
+
+            var portNumber = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.Trim('/');
+            var userInfo = uri.UserInfo.Split(':');
+
+            if (userInfo.Length != 2)
+                throw new FormatException("Formato de credenciais inválido");
+
+            var connectionString = $"Host={host};" +
+                                  $"Port={portNumber};" +
+                                  $"Database={database};" +
+                                  $"Username={userInfo[0]};" +
+                                  $"Password={userInfo[1]};" +
+                                  $"SSL Mode=Require;" +
+                                  $"Trust Server Certificate=true";
+
+            builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+            Console.WriteLine($"✅ Database do Render configurado");
         }
-
-        var uri = new Uri(databaseUrl);
-
-        // CORREÇÃO 2: Verificar se porta é válida
-        var portNumber = uri.Port > 0 ? uri.Port : 5432;
-
-        // CORREÇÃO 3: Verificar hostname
-        var host = uri.Host;
-        if (!host.Contains("."))
+        catch (Exception ex)
         {
-            host += ".render.com"; // Adiciona sufixo se necessário
-            Console.WriteLine($"🌐 Hostname ajustado: {host}");
-        }
-
-        var database = uri.AbsolutePath.Trim('/');
-        var userInfo = uri.UserInfo.Split(':');
-
-        if (userInfo.Length != 2)
-        {
-            throw new FormatException("Formato de usuário/senha inválido na DATABASE_URL");
-        }
-
-        var connectionString = $"Host={host};" +
-                              $"Port={portNumber};" +
-                              $"Database={database};" +
-                              $"Username={userInfo[0]};" +
-                              $"Password={userInfo[1]};" +
-                              $"SSL Mode=Require;" +
-                              $"Trust Server Certificate=true";
-
-        builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
-        Console.WriteLine($"✅ Database configurado via DATABASE_URL");
-        Console.WriteLine($"📊 Host: {host}, Database: {database}, User: {userInfo[0]}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERRO ao processar DATABASE_URL: {ex.Message}");
-        Console.WriteLine($"🔍 URL: {databaseUrl}");
-
-        // Fallback: usar appsettings.json
-        var fallbackConnection = builder.Configuration.GetConnectionString("DefaultConnection");
-        if (!string.IsNullOrEmpty(fallbackConnection))
-        {
-            Console.WriteLine($"🔄 Usando connection string do appsettings.json");
+            Console.WriteLine($"❌ ERRO ao processar DATABASE_URL: {ex.Message}");
+            throw; // Falha crítica no Render
         }
     }
 }
 else
 {
-    Console.WriteLine("ℹ️ DATABASE_URL não encontrada, usando appsettings.json");
+    // LOCAL: Usar appsettings.*.json normalmente
+    Console.WriteLine($"🏠 Ambiente Local - Portas: 5249 (HTTP), 7051 (HTTPS)");
+
+    // Opcional: Log da connection string local (sem senha)
+    var localConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrEmpty(localConnection))
+    {
+        var safeLog = localConnection.Contains("Password=")
+            ? localConnection.Substring(0, localConnection.IndexOf("Password=")) + "Password=***"
+            : localConnection;
+        Console.WriteLine($"🔗 Connection String local: {safeLog}");
+    }
 }
 
-// Configurar Serilog para logging
+// Configurar Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -108,7 +99,8 @@ builder.Host.UseSerilog();
 
 try
 {
-    Log.Information("Starting CareerFlow API");
+    Log.Information("Starting CareerFlow API - Environment: {Environment}",
+        builder.Environment.EnvironmentName);
 
     // Add services to the container
     builder.Services.AddControllers();
@@ -116,12 +108,9 @@ try
     // Add Infrastructure
     builder.Services.AddInfrastructure(builder.Configuration);
 
-    // Custom configurations
-    builder.Services.AddSwaggerDocumentation();
-
-    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    // Swagger
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerDocumentation(); // Seu método personalizado
 
     // Configurar JWT
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -153,9 +142,16 @@ try
 
     var app = builder.Build();
 
-    // Aplicar migrations e seed data
-    await app.ApplyMigrationsAndSeedAsync();
-
+    // Aplicar migrations e seed data APENAS se configurado
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("${DATABASE_URL}"))
+    {
+        await app.ApplyMigrationsAndSeedAsync();
+    }
+    else
+    {
+        Console.WriteLine("⚠️  Database não configurado, pulando migrations");
+    }
 
     // Configure the HTTP request pipeline
     if (app.Environment.IsDevelopment())
@@ -166,27 +162,39 @@ try
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerFlow API v1");
             c.RoutePrefix = "swagger";
         });
+
+        // Adicionar CORS para desenvolvimento local
+        app.UseCors(builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+    }
+    else
+    {
+        // Em produção, Swagger pode ser protegido ou desabilitado
+        app.UseSwagger();
+        // app.UseSwaggerUI(); // Descomente se quiser Swagger em produção
     }
 
     app.UseHttpsRedirection();
-
-    // Custom middleware
     app.UseMiddleware<ExceptionMiddleware>();
-
     app.UseAuthentication();
-    
     app.UseAuthorization();
-
     app.MapControllers();
 
-    // Health check endpoint
-    app.MapGet("/health", () => "CareerFlow API is running!");
+    app.MapGet("/health", () => new {
+        Status = "Healthy",
+        Environment = app.Environment.EnvironmentName,
+        Timestamp = DateTime.UtcNow,
+        Database = !string.IsNullOrEmpty(connectionString) ? "Configured" : "Not configured"
+    });
 
     app.Run();
 }
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+    throw;
 }
 finally
 {
