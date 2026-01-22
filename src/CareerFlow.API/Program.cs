@@ -22,29 +22,80 @@ var port = Environment.GetEnvironmentVariable("PORT");
 if (isRender && !string.IsNullOrEmpty(port))
 {
     builder.WebHost.UseUrls($"http://*:{port}");
-
-    // Log específico para Render
     Console.WriteLine($"🚀 Render Environment Detected - Port: {port}");
 }
 
-// Se DATABASE_URL existe (formato do Render), converter para ConnectionString
+// SEÇÃO CRÍTICA: Converter DATABASE_URL
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Converter DATABASE_URL do Render para ConnectionString do PostgreSQL
-    var uri = new Uri(databaseUrl);
-    var userInfo = uri.UserInfo.Split(':');
+    try
+    {
+        Console.WriteLine($"📦 DATABASE_URL encontrada: {databaseUrl.Substring(0, Math.Min(databaseUrl.Length, 50))}...");
 
-    var connectionString = $"Host={uri.Host};" +
-                          $"Port={uri.Port};" +
-                          $"Database={uri.AbsolutePath.TrimStart('/')};" +
-                          $"Username={userInfo[0]};" +
-                          $"Password={userInfo[1]};" +
-                          $"SSL Mode=Require;" +
-                          $"Trust Server Certificate=true";
+        // CORREÇÃO 1: Se não tem :5432, adiciona antes do /
+        if (!databaseUrl.Contains(":5432") && !databaseUrl.Contains(":"))
+        {
+            // Encontra a posição do @ e do /
+            var atIndex = databaseUrl.IndexOf('@');
+            var slashIndex = databaseUrl.IndexOf('/', atIndex);
 
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
-    Console.WriteLine($"✅ Database URL converted for Render");
+            if (atIndex > 0 && slashIndex > 0)
+            {
+                databaseUrl = databaseUrl.Insert(slashIndex, ":5432");
+                Console.WriteLine($"🔧 Porta 5432 adicionada: {databaseUrl}");
+            }
+        }
+
+        var uri = new Uri(databaseUrl);
+
+        // CORREÇÃO 2: Verificar se porta é válida
+        var portNumber = uri.Port > 0 ? uri.Port : 5432;
+
+        // CORREÇÃO 3: Verificar hostname
+        var host = uri.Host;
+        if (!host.Contains("."))
+        {
+            host += ".render.com"; // Adiciona sufixo se necessário
+            Console.WriteLine($"🌐 Hostname ajustado: {host}");
+        }
+
+        var database = uri.AbsolutePath.Trim('/');
+        var userInfo = uri.UserInfo.Split(':');
+
+        if (userInfo.Length != 2)
+        {
+            throw new FormatException("Formato de usuário/senha inválido na DATABASE_URL");
+        }
+
+        var connectionString = $"Host={host};" +
+                              $"Port={portNumber};" +
+                              $"Database={database};" +
+                              $"Username={userInfo[0]};" +
+                              $"Password={userInfo[1]};" +
+                              $"SSL Mode=Require;" +
+                              $"Trust Server Certificate=true";
+
+        builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+        Console.WriteLine($"✅ Database configurado via DATABASE_URL");
+        Console.WriteLine($"📊 Host: {host}, Database: {database}, User: {userInfo[0]}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERRO ao processar DATABASE_URL: {ex.Message}");
+        Console.WriteLine($"🔍 URL: {databaseUrl}");
+
+        // Fallback: usar appsettings.json
+        var fallbackConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (!string.IsNullOrEmpty(fallbackConnection))
+        {
+            Console.WriteLine($"🔄 Usando connection string do appsettings.json");
+        }
+    }
+}
+else
+{
+    Console.WriteLine("ℹ️ DATABASE_URL não encontrada, usando appsettings.json");
 }
 
 // Configurar Serilog para logging
