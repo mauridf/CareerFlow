@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using CareerFlow.API.Extensions;
 using CareerFlow.API.Middleware;
+using CareerFlow.Application;
 using CareerFlow.Domain.Common;
 using CareerFlow.Infrastructure;
 using DotNetEnv;
@@ -107,6 +108,9 @@ try
 
     // Add Infrastructure
     builder.Services.AddInfrastructure(builder.Configuration);
+
+    // Add Application
+    builder.Services.AddApplication();
 
     // Swagger
     builder.Services.AddEndpointsApiExplorer();
