@@ -1,6 +1,7 @@
 ﻿using CareerFlow.Domain.Common;
 using CareerFlow.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CareerFlow.Infrastructure.Data;
 
@@ -25,6 +26,21 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configurar todas as propriedades DateTime para usar UTC
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetValueConverter(
+                        new ValueConverter<DateTime, DateTime>(
+                            v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)));
+                }
+            }
+        }
 
         // Aplicar todas as configurações das entidades
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

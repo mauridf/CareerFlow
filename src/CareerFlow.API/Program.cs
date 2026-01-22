@@ -123,23 +123,6 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    var app = builder.Build();
-
-    // Aplicar migrations e seed data
-    await app.ApplyMigrationsAndSeedAsync();
-
-
-    // Configure the HTTP request pipeline
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerFlow API v1");
-            c.RoutePrefix = "swagger";
-        });
-    }
-
     // Configurar JWT
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
     builder.Services.Configure<JwtSettings>(jwtSettings);
@@ -168,11 +151,30 @@ try
 
     builder.Services.AddAuthorization();
 
+    var app = builder.Build();
+
+    // Aplicar migrations e seed data
+    await app.ApplyMigrationsAndSeedAsync();
+
+
+    // Configure the HTTP request pipeline
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerFlow API v1");
+            c.RoutePrefix = "swagger";
+        });
+    }
+
     app.UseHttpsRedirection();
 
     // Custom middleware
     app.UseMiddleware<ExceptionMiddleware>();
 
+    app.UseAuthentication();
+    
     app.UseAuthorization();
 
     app.MapControllers();
