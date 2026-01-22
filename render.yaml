@@ -1,4 +1,4 @@
-# render.yaml
+# render.yaml (CORRIGIDO - sem disk no free tier)
 services:
   - type: web
     name: careerflow-api
@@ -15,10 +15,7 @@ services:
         value: 8080
     healthCheckPath: /health
     autoDeploy: true
-    disk:
-      name: uploads
-      mountPath: /data/uploads
-      sizeGB: 1
+    # REMOVIDO: disk - não suportado no free tier
 
 databases:
   - name: careerflow-db

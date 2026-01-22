@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using CareerFlow.API.Extensions;
 using CareerFlow.API.Middleware;
 using CareerFlow.Domain.Common;
@@ -7,20 +7,44 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using DotNetEnv;
 
-// Carregar .env file
+// Carregar variáveis de ambiente
 Env.Load();
-
-var isRender = Environment.GetEnvironmentVariable("RENDER") != null;
-var port = Environment.GetEnvironmentVariable("PORT");
 
 var builder = WebApplication.CreateBuilder(args);
 
 
+// Configurar para Render
+var isRender = Environment.GetEnvironmentVariable("RENDER") != null;
+var port = Environment.GetEnvironmentVariable("PORT");
+
 if (isRender && !string.IsNullOrEmpty(port))
 {
-    // Para Render, usar a porta definida
     builder.WebHost.UseUrls($"http://*:{port}");
+
+    // Log específico para Render
+    Console.WriteLine($"🚀 Render Environment Detected - Port: {port}");
+}
+
+// Se DATABASE_URL existe (formato do Render), converter para ConnectionString
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Converter DATABASE_URL do Render para ConnectionString do PostgreSQL
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+
+    var connectionString = $"Host={uri.Host};" +
+                          $"Port={uri.Port};" +
+                          $"Database={uri.AbsolutePath.TrimStart('/')};" +
+                          $"Username={userInfo[0]};" +
+                          $"Password={userInfo[1]};" +
+                          $"SSL Mode=Require;" +
+                          $"Trust Server Certificate=true";
+
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+    Console.WriteLine($"✅ Database URL converted for Render");
 }
 
 // Configurar Serilog para logging
