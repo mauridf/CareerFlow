@@ -20,7 +20,17 @@ public class FileStorageService : IFileStorageService
 
         var fileStorageSettings = _configuration.GetSection("FileStorage");
         _basePath = fileStorageSettings["BasePath"] ?? "uploads";
-        _maxFileSizeBytes = (fileStorageSettings.GetValue<int>("MaxFileSizeMB") ?? 5) * 1024 * 1024;
+
+        // Ler MaxFileSizeMB de forma segura usando a subseção e Value (string),
+        // evitando usar "??" entre dois int (causa CS0019).
+        int maxFileSizeMB = 5;
+        var maxFileSizeSection = fileStorageSettings.GetSection("MaxFileSizeMB");
+        if (!string.IsNullOrEmpty(maxFileSizeSection.Value) && int.TryParse(maxFileSizeSection.Value, out var parsedMb))
+        {
+            maxFileSizeMB = parsedMb;
+        }
+        _maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
+
         _allowedExtensions = fileStorageSettings.GetSection("AllowedExtensions").Get<string[]>()
             ?? new[] { ".jpg", ".jpeg", ".png", ".pdf" };
 

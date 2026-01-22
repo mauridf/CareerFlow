@@ -35,8 +35,13 @@ public class UpdateLanguageDtoValidator : AbstractValidator<UpdateLanguageDto>
             .When(x => !string.IsNullOrEmpty(x.Level));
     }
 
-    private bool BeValidLanguageLevel(string level)
+    // CORREÇÃO AQUI: Mudar parâmetro para string?
+    private bool BeValidLanguageLevel(string? level)
     {
+        // Tratar caso nulo ou vazio
+        if (string.IsNullOrEmpty(level))
+            return false;
+
         return LanguageLevel.TryFromName(level, out _);
     }
 }
