@@ -21,9 +21,16 @@ public class MappingProfile : Profile
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         // Skill mappings
+        //CreateMap<Skill, SkillDto>()
+        //    .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.Name))
+        //    .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.Name));
+
         CreateMap<Skill, SkillDto>()
-            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.Name))
-            .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.Name));
+            .AfterMap((src, dest) =>
+            {
+                dest.Type = src.Type.Name;
+                dest.Level = src.Level.Name;
+            });
 
         CreateMap<CreateSkillDto, Skill>()
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src => GetSkillType(src.Type)))

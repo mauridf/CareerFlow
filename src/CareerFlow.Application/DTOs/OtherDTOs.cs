@@ -32,7 +32,8 @@ public class CreateCertificateDto
 
     public DateTime? EndDate { get; set; }
 
-    public IFormFile? CertificateFile { get; set; }
+    // Alterado de IFormFile para string
+    public string? CertificateFile { get; set; }
 }
 
 public class UpdateCertificateDto
@@ -47,7 +48,8 @@ public class UpdateCertificateDto
 
     public DateTime? EndDate { get; set; }
 
-    public IFormFile? CertificateFile { get; set; }
+    // Alterado de IFormFile para string
+    public string? CertificateFile { get; set; }
 }
 
 // Language DTOs

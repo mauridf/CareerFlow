@@ -25,14 +25,6 @@ public class CertificatesController : ApiControllerBase
         return Ok(certificates);
     }
 
-    [HttpGet("expiring")]
-    public async Task<ActionResult<IEnumerable<CertificateDto>>> GetExpiringCertificates([FromQuery] int daysThreshold = 30)
-    {
-        var userId = GetUserId();
-        var certificates = await _certificateService.GetExpiringCertificatesAsync(userId, daysThreshold);
-        return Ok(certificates);
-    }
-
     [HttpGet("{id}")]
     public async Task<ActionResult<CertificateDto>> GetCertificate(Guid id)
     {
@@ -45,7 +37,7 @@ public class CertificatesController : ApiControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CertificateDto>> CreateCertificate(CreateCertificateDto dto)
+    public async Task<ActionResult<CertificateDto>> CreateCertificate([FromBody] CreateCertificateDto dto)
     {
         var userId = GetUserId();
         var certificate = await _certificateService.CreateCertificateAsync(userId, dto);
@@ -53,7 +45,7 @@ public class CertificatesController : ApiControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<CertificateDto>> UpdateCertificate(Guid id, UpdateCertificateDto dto)
+    public async Task<ActionResult<CertificateDto>> UpdateCertificate(Guid id, [FromBody] UpdateCertificateDto dto)
     {
         var certificate = await _certificateService.GetCertificateByIdAsync(id);
 

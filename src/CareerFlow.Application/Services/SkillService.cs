@@ -29,10 +29,32 @@ public class SkillService : ServiceBase, ISkillService
         if (filter != null)
         {
             if (!string.IsNullOrEmpty(filter.Type))
-                query = query.Where(s => s.Type.Name == filter.Type);
+            {
+                // Converta a string para SkillType e filtre pelo valor numérico
+                if (SkillType.TryFromName(filter.Type, out var skillType))
+                {
+                    query = query.Where(s => s.Type == skillType);
+                }
+                else
+                {
+                    // Se não encontrar o tipo, não retorna resultados
+                    return Enumerable.Empty<SkillDto>();
+                }
+            }
 
             if (!string.IsNullOrEmpty(filter.Level))
-                query = query.Where(s => s.Level.Name == filter.Level);
+            {
+                // Converta a string para SkillLevel e filtre pelo valor numérico
+                if (SkillLevel.TryFromName(filter.Level, out var skillLevel))
+                {
+                    query = query.Where(s => s.Level == skillLevel);
+                }
+                else
+                {
+                    // Se não encontrar o nível, não retorna resultados
+                    return Enumerable.Empty<SkillDto>();
+                }
+            }
         }
 
         var skills = await query
@@ -112,17 +134,23 @@ public class SkillService : ServiceBase, ISkillService
 
     public async Task<IEnumerable<SkillDistributionDto>> GetSkillDistributionAsync(Guid userId)
     {
-        var distribution = await _context.Skills
+        // Primeiro traz todos os skills filtrados
+        var skills = await _context.Skills
             .Where(s => s.UserId == userId)
-            .GroupBy(s => s.Type.Name)
+            .Select(s => new { s.Type })
+            .ToListAsync();  // Aqui a query é executada no banco
+
+        // Agrupamento e cálculo feito na memória (client-side)
+        var distribution = skills
+            .GroupBy(s => s.Type)
             .Select(g => new SkillDistributionDto
             {
-                Type = g.Key,
+                Type = SkillType.FromValue(g.Key).Name,
                 Count = g.Count(),
                 Percentage = 0 // Será calculado depois
             })
             .OrderByDescending(sd => sd.Count)
-            .ToListAsync();
+            .ToList();
 
         var total = distribution.Sum(sd => sd.Count);
         if (total > 0)
