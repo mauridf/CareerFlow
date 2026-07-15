@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CareerFlow.Api/CareerFlow.Api.csproj" />
+    <Project Path="src/CareerFlow.Application/CareerFlow.Application.csproj" />
+    <Project Path="src/CareerFlow.Core/CareerFlow.Core.csproj" />
+    <Project Path="src/CareerFlow.Infrastructure/CareerFlow.Infrastructure.csproj" />
+    <Project Path="src/CareerFlow.Scheduler/CareerFlow.Scheduler.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CareerFlow.Tests.E2E/CareerFlow.Tests.E2E.csproj" />
+    <Project Path="tests/CareerFlow.Tests.Integration/CareerFlow.Tests.Integration.csproj" />
+    <Project Path="tests/CareerFlow.Tests.Unit/CareerFlow.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

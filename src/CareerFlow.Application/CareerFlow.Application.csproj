@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CareerFlow.Core\CareerFlow.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\Behaviors\" />
+    <Folder Include="Common\DTOs\" />
+    <Folder Include="Common\Interfaces\" />
+    <Folder Include="Common\Mappings\" />
+    <Folder Include="Features\Admin\Commands\" />
+    <Folder Include="Features\Admin\Handlers\" />
+    <Folder Include="Features\Admin\Queries\" />
+    <Folder Include="Features\Auth\Commands\" />
+    <Folder Include="Features\Auth\Handlers\" />
+    <Folder Include="Features\Auth\Queries\" />
+    <Folder Include="Features\Certificates\Commands\" />
+    <Folder Include="Features\Certificates\Handlers\" />
+    <Folder Include="Features\Certificates\Queries\" />
+    <Folder Include="Features\Dashboard\Handlers\" />
+    <Folder Include="Features\Dashboard\Queries\" />
+    <Folder Include="Features\Education\Commands\" />
+    <Folder Include="Features\Education\Handlers\" />
+    <Folder Include="Features\Education\Queries\" />
+    <Folder Include="Features\Experiences\Commands\" />
+    <Folder Include="Features\Experiences\Handlers\" />
+    <Folder Include="Features\Experiences\Queries\" />
+    <Folder Include="Features\Languages\Commands\" />
+    <Folder Include="Features\Languages\Handlers\" />
+    <Folder Include="Features\Languages\Queries\" />
+    <Folder Include="Features\Profile\Commands\" />
+    <Folder Include="Features\Profile\Handlers\" />
+    <Folder Include="Features\Profile\Queries\" />
+    <Folder Include="Features\Resume\Commands\" />
+    <Folder Include="Features\Resume\Handlers\" />
+    <Folder Include="Features\Resume\Queries\" />
+    <Folder Include="Features\Skills\Commands\" />
+    <Folder Include="Features\Skills\Handlers\" />
+    <Folder Include="Features\Skills\Queries\" />
+    <Folder Include="Features\SocialNetworks\Commands\" />
+    <Folder Include="Features\SocialNetworks\Handlers\" />
+    <Folder Include="Features\SocialNetworks\Queries\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CareerFlow.Application\CareerFlow.Application.csproj" />
+    <ProjectReference Include="..\CareerFlow.Core\CareerFlow.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\Configurations\" />
+    <Folder Include="Data\Interceptors\" />
+    <Folder Include="Data\Migrations\" />
+    <Folder Include="External\Analytics\" />
+    <Folder Include="External\Cache\" />
+    <Folder Include="External\MessageBus\" />
+    <Folder Include="External\PDF\" />
+    <Folder Include="External\Storage\" />
+    <Folder Include="Outbox\" />
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
