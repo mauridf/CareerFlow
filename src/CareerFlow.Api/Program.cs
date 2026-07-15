@@ -1,39 +1,86 @@
-var builder = WebApplication.CreateBuilder(args);
+using CareerFlow.Api.Extensions;
+using Serilog;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ============================================
+// Configuração inicial do Serilog
+// ============================================
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var app = builder.Build();
+Log.Information("🚀 Iniciando CareerFlow API...");
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
+    var builder = WebApplication.CreateBuilder(args);
+
+    // ============================================
+    // Configuração do Serilog (completo)
+    // ============================================
+    builder.Host.UseSerilog((context, services, configuration) =>
+    {
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithThreadId()
+            .Enrich.WithCorrelationId();
+    });
+
+    // ============================================
+    // Configurações fortemente tipadas
+    // ============================================
+    builder.Services.AddAppSettings(builder.Configuration);
+
+    // ============================================
+    // Configuração das portas
+    // ============================================
+    builder.WebHost.UseUrls("http://localhost:5000");
+
+    // ============================================
+    // Serviços básicos
+    // ============================================
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddOpenApi();
+
+    // Health Checks
+    builder.Services.AddHealthChecks();
+
+    var app = builder.Build();
+
+    // ============================================
+    // Pipeline de Middleware
+    // ============================================
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.UseDeveloperExceptionPage();
+    }
+
+    app.UseSerilogRequestLogging();
+    app.UseRouting();
+    app.MapControllers();
+    app.MapHealthChecks("/health");
+
+    // ============================================
+    // Inicialização
+    // ============================================
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        Log.Information("✅ CareerFlow API iniciada em {Url}",
+            app.Configuration["Application:Url"]);
+        Log.Information("📊 Health check: http://localhost:5000/health");
+    });
+
+    await app.RunAsync();
 }
-
-var summaries = new[]
+catch (Exception ex)
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    Log.Fatal(ex, "❌ Falha ao iniciar a aplicação");
+}
+finally
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    Log.CloseAndFlush();
 }
