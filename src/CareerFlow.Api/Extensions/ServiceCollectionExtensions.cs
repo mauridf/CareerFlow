@@ -1,4 +1,5 @@
 using CareerFlow.Core.Interfaces.Settings;
+using CareerFlow.Api.Extensions;
 
 namespace CareerFlow.Api.Extensions;
 
@@ -12,7 +13,6 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddAppSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        // Bind das configurações
         services.Configure<ApplicationSettings>(
             configuration.GetSection(ApplicationSettings.SectionName));
 
@@ -33,6 +33,19 @@ public static class ServiceCollectionExtensions
 
         services.Configure<PdfSettings>(
             configuration.GetSection(PdfSettings.SectionName));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registra todos os serviços da aplicação
+    /// </summary>
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        // Serilog
+        services.AddSerilogServices();
+
+        // Outros serviços serão adicionados nos próximos passos
 
         return services;
     }

@@ -7,7 +7,6 @@
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
     <Folder Include="Common\DTOs\" />
-    <Folder Include="Common\Interfaces\" />
     <Folder Include="Common\Mappings\" />
     <Folder Include="Features\Admin\Commands\" />
     <Folder Include="Features\Admin\Handlers\" />
