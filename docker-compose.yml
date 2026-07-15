@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL 16 - Banco de dados principal
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: careerflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: careerflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # Configurações de performance
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=pt_BR.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - careerflow_postgres_data:/var/lib/postgresql/data
+      # Scripts de inicialização (criam extensões, etc.)
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d careerflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - careerflow-network
+    # Labels para organização
+    labels:
+      - "com.careerflow.service=database"
+      - "com.careerflow.environment=development"
+
+  # ============================================
+  # Redis 7 - Cache e sessões
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: careerflow-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    ports:
+      - "6379:6379"
+    volumes:
+      - careerflow_redis_data:/data
+      # Arquivo de configuração customizado
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - careerflow-network
+    labels:
+      - "com.careerflow.service=cache"
+      - "com.careerflow.environment=development"
+
+# ============================================
+# Volumes persistentes
+# ============================================
+volumes:
+  careerflow_postgres_data:
+    name: careerflow_postgres_data
+    driver: local
+  careerflow_redis_data:
+    name: careerflow_redis_data
+    driver: local
+
+# ============================================
+# Rede dedicada
+# ============================================
+networks:
+  careerflow-network:
+    name: careerflow-network
+    driver: bridge

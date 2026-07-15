@@ -510,3 +510,15 @@ docker-compose.override.yml
 /TestResults/
 /coverlet/
 coverage.opencover.xml
+
+# Docker volumes (não commitar dados locais)
+docker/postgres/data/
+docker/redis/data/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Scripts de deploy local
+scripts/*.local.*
