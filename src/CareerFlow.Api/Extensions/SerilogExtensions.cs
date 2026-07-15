@@ -12,10 +12,7 @@ public static class SerilogExtensions
     /// </summary>
     public static IServiceCollection AddSerilogServices(this IServiceCollection services)
     {
-        // Registra IHttpContextAccessor para os enrichers
-        services.AddHttpContextAccessor();
-
-        // Registra o serviço de log tipado
+        // Registra o serviço de log tipado para uso nas camadas
         services.AddScoped(typeof(Application.Common.Interfaces.ILoggerService<>),
                           typeof(Application.Common.Interfaces.LoggerService<>));
 

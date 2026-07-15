@@ -2,6 +2,7 @@ using CareerFlow.Api.Extensions;
 using CareerFlow.Api.Middlewares;
 using Serilog;
 using Serilog.Events;
+using Scalar.AspNetCore;
 
 // ============================================
 // Configuração inicial do Serilog (Bootstrap)
@@ -29,6 +30,9 @@ try
     // ============================================
     builder.Host.UseSerilog((context, services, configuration) =>
     {
+        // Obtém o HttpContextAccessor do serviço para os enrichers
+        var httpContextAccessor = services.GetRequiredService<IHttpContextAccessor>();
+
         configuration
             // Níveis mínimos
             .MinimumLevel.Information()
@@ -52,13 +56,14 @@ try
             .Enrich.WithEnvironmentName()
             .Enrich.WithThreadId()
             .Enrich.WithCorrelationId()
-            .Enrich.WithClientIp()
-            .Enrich.WithClientAgent()
+            .Enrich.WithClientIp(httpContextAccessor)      // Com DI
+            .Enrich.WithClientAgent(httpContextAccessor)    // Com DI
 
             // Destruturação de objetos
             .Destructure.ToMaximumDepth(4)
             .Destructure.ToMaximumStringLength(1000)
             .Destructure.ToMaximumCollectionCount(20)
+            .Destructure.WithSensitiveDataMasking()
 
             // Sinks
             .WriteTo.Console(
@@ -87,6 +92,11 @@ try
                         restrictedToMinimumLevel: LogEventLevel.Warning);
                 });
     });
+
+    // ============================================
+    // Registrar HttpContextAccessor (necessário para enrichers)
+    // ============================================
+    builder.Services.AddHttpContextAccessor();
 
     // ============================================
     // Configurações fortemente tipadas
@@ -128,9 +138,11 @@ try
     {
         options.AddDefaultPolicy(policy =>
         {
-            policy.WithOrigins(
-                    builder.Configuration.GetSection("Application:CorsOrigins").Get<string[]>() ??
-                    new[] { "http://localhost:3000" })
+            var corsOrigins = builder.Configuration
+                .GetSection("Application:CorsOrigins")
+                .Get<string[]>() ?? new[] { "http://localhost:3000" };
+
+            policy.WithOrigins(corsOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -155,21 +167,23 @@ try
         };
     });
 
-    // 2. CORS
+    // 2. Request Logging customizado
+    app.UseRequestLogging();
+
+    // 3. CORS
     app.UseCors();
 
-    // 3. Middlewares customizados (serão adicionados nos próximos passos)
+    // 4. Middlewares customizados (serão adicionados nos próximos passos)
     // app.UseMiddleware<GlobalExceptionMiddleware>();
-    // app.UseMiddleware<RequestLoggingMiddleware>();
 
-    // 4. Roteamento
+    // 5. Roteamento
     app.UseRouting();
 
-    // 5. Authentication e Authorization (serão adicionados no passo de Auth)
+    // 6. Authentication e Authorization (serão adicionados no passo de Auth)
     // app.UseAuthentication();
     // app.UseAuthorization();
 
-    // 6. Endpoints
+    // 7. Endpoints
     app.MapControllers();
     app.MapHealthChecks("/health");
 
@@ -177,7 +191,16 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
-        app.MapScalar();
+
+        // Configuração do Scalar
+        app.MapScalarApiReference(options =>
+        {
+            options
+                .WithTitle("CareerFlow API")
+                .WithTheme(ScalarTheme.Purple)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+                .WithDarkModeToggle(true);
+        });
     }
 
     // ============================================
@@ -188,6 +211,13 @@ try
         var url = app.Configuration["Application:Url"] ?? "http://localhost:5000";
         Log.Information("✅ CareerFlow API iniciada com sucesso em {Url}", url);
         Log.Information("📊 Health check: {Url}/health", url);
+
+        if (app.Environment.IsDevelopment())
+        {
+            Log.Information("📚 Documentação Scalar: {Url}/scalar/v1", url);
+            Log.Information("📚 Documentação OpenAPI: {Url}/openapi/v1.json", url);
+        }
+
         Log.Information("📚 Ambiente: {Environment}", app.Environment.EnvironmentName);
     });
 
