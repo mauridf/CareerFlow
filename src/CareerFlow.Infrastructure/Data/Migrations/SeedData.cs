@@ -55,7 +55,7 @@ public static class SeedData
             "(11) 98765-4321",
             "São Paulo",
             "SP",
-            new DateTime(1990, 5, 15),
+            new DateTime(1990, 5, 15, 0, 0, 0, DateTimeKind.Utc),
             "Desenvolvedor Full Stack com mais de 8 anos de experiência em desenvolvimento de software. " +
             "Especialista em arquitetura de microsserviços, .NET Core e React. " +
             "Experiência em liderança técnica e mentoria de equipes."
@@ -85,7 +85,7 @@ public static class SeedData
         {
             Experience.Create(
                 person.Id, "TechCorp Brasil", "Tech Lead",
-                new DateTime(2022, 1, 1), null,
+                new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc), null,
                 "Liderança técnica de equipe de 8 desenvolvedores. " +
                 "Arquitetura e implementação de microsserviços em .NET. " +
                 "Migração de sistema legado para cloud AWS. " +
@@ -96,7 +96,7 @@ public static class SeedData
             ),
             Experience.Create(
                 person.Id, "Digital Solutions Ltda", "Desenvolvedor Sênior",
-                new DateTime(2019, 3, 1), new DateTime(2021, 12, 31),
+                new DateTime(2019, 3, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2021, 12, 31, 0, 0, 0, DateTimeKind.Utc),
                 "Desenvolvimento de APIs REST com ASP.NET Core. " +
                 "Implementação de autenticação OAuth2 e JWT. " +
                 "Otimização de queries PostgreSQL resultando em 60% de melhoria.",
@@ -115,7 +115,7 @@ public static class SeedData
                 person.Id, "Universidade de São Paulo (USP)",
                 "Ciência da Computação",
                 EducationLevel.Graduation,
-                new DateTime(2010, 1, 1), new DateTime(2014, 12, 31),
+                new DateTime(2010, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2014, 12, 31, 0, 0, 0, DateTimeKind.Utc),
                 EducationStatus.Completed,
                 grade: "8.5",
                 displayOrder: 0
