@@ -1,8 +1,18 @@
+using System.Text;
 using CareerFlow.Api.Extensions;
 using CareerFlow.Api.Middlewares;
+using CareerFlow.Api.Services;
 using CareerFlow.Application;
+using CareerFlow.Core.Interfaces;
+using CareerFlow.Core.Interfaces.Settings;
 using CareerFlow.Infrastructure;
+using CareerFlow.Infrastructure.Data;
+using CareerFlow.Infrastructure.Data.Migrations;
+using CareerFlow.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
@@ -107,6 +117,89 @@ try
     builder.Services.AddAppSettings(builder.Configuration);
 
     // ============================================
+    // JWT Authentication
+    // ============================================
+    var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
+    var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = "role",
+            NameClaimType = "given_name"
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Log.Warning("🔒 Falha na autenticação: {Error}", context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Log.Debug("✅ Token validado para: {User}",
+                    context.Principal?.FindFirst("email")?.Value);
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("Premium", policy =>
+            policy.RequireClaim("isPremium", "true"));
+
+        options.AddPolicy("Admin", policy =>
+            policy.RequireRole("Admin"));
+    });
+
+    // ============================================
+    // Rate Limiting
+    // ============================================
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Login: 5 tentativas por minuto
+        options.AddFixedWindowLimiter("Login", config =>
+        {
+            config.PermitLimit = 5;
+            config.Window = TimeSpan.FromMinutes(1);
+            config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+            config.QueueLimit = 0;
+        });
+
+        // Register: 3 por hora
+        options.AddFixedWindowLimiter("Register", config =>
+        {
+            config.PermitLimit = 3;
+            config.Window = TimeSpan.FromHours(1);
+        });
+
+        // Global: 100 por minuto
+        options.AddFixedWindowLimiter("Global", config =>
+        {
+            config.PermitLimit = 100;
+            config.Window = TimeSpan.FromMinutes(1);
+        });
+    });
+
+    // ============================================
     // Registrar serviços da aplicação
     // ============================================
     builder.Services.AddApplicationServices();
@@ -148,8 +241,8 @@ try
         options.AddDefaultPolicy(policy =>
         {
             var corsOrigins = builder.Configuration
-                .GetSection("Application:CorsOrigins")
-                .Get<string[]>() ?? new[] { "http://localhost:3000" };
+                .GetSection("Application:CorsOrigins").Get<string[]>()
+                ?? new[] { "http://localhost:3000" };
 
             policy.WithOrigins(corsOrigins)
                   .AllowAnyHeader()
@@ -157,6 +250,17 @@ try
                   .AllowCredentials();
         });
     });
+
+    // ============================================
+    // Serviços da API
+    // ============================================
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+    builder.Services.AddScoped<PersonRepository>();
+
+    // ============================================
+    // URLs
+    // ============================================
+    builder.WebHost.UseUrls("http://localhost:5000");
 
     var app = builder.Build();
 
@@ -181,21 +285,20 @@ try
     if (app.Environment.IsDevelopment())
     {
         using var scope = app.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlow.Infrastructure.Data.CareerFlowDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlowDbContext>();
 
         try
         {
             Log.Information("📊 Aplicando migrations...");
-            await dbContext.Database.MigrateAsync();
-            Log.Information("✅ Migrations aplicadas com sucesso");
+            await dbContext.Database.EnsureCreatedAsync();
+            Log.Information("✅ Banco de dados verificado");
 
-            Log.Information("🌱 Aplicando dados iniciais (seed)...");
-            await CareerFlow.Infrastructure.Data.Migrations.SeedData.SeedAsync(dbContext);
+            Log.Information("🌱 Aplicando dados iniciais...");
+            await SeedData.SeedAsync(dbContext);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "❌ Erro ao aplicar migrations/seed");
-            // Não impede a aplicação de iniciar
         }
     }
 
@@ -203,6 +306,7 @@ try
     // Pipeline de Middleware
     // ============================================
 
+    app.UseGlobalExceptionHandler();
     // 1. Serilog Request Logging (primeiro para capturar tudo)
     app.UseSerilogRequestLogging(options =>
     {
@@ -221,6 +325,8 @@ try
     // 3. CORS
     app.UseCors();
 
+    app.UseRateLimiter();
+
     // 4. Middlewares customizados (serão adicionados nos próximos passos)
     // app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -228,8 +334,8 @@ try
     app.UseRouting();
 
     // 6. Authentication e Authorization (serão adicionados no passo de Auth)
-    // app.UseAuthentication();
-    // app.UseAuthorization();
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     // 7. Endpoints
     app.MapControllers();
@@ -239,8 +345,6 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
-
-        // Configuração do Scalar
         app.MapScalarApiReference(options =>
         {
             options
@@ -250,6 +354,12 @@ try
                 .WithDarkModeToggle(true);
         });
     }
+
+    // ============================================
+    // Outbox Processor
+    // ============================================
+    var outboxProcessor = app.Services.GetRequiredService<CareerFlow.Infrastructure.Outbox.OutboxProcessor>();
+    outboxProcessor.Start();
 
     // ============================================
     // Eventos de ciclo de vida
