@@ -1,8 +1,10 @@
 using System.Reflection;
+using CareerFlow.Application.Common.Behaviors;
+using CareerFlow.Application.Common.Interfaces;
+using CareerFlow.Application.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using CareerFlow.Application.Common.Behaviors;
 
 namespace CareerFlow.Application;
 
@@ -22,8 +24,6 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-
-            // Behaviors (pipeline)
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         });
@@ -39,9 +39,15 @@ public static class DependencyInjection
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
         // ============================================
-        // Serviços de Aplicação
+        // Serviços de Auth
         // ============================================
-        services.AddScoped(typeof(Common.Interfaces.ILoggerService<>), typeof(Common.Interfaces.LoggerService<>));
+        services.AddScoped<IPasswordHasher, PasswordService>();
+        services.AddScoped<ITokenService, TokenService>();
+
+        // ============================================
+        // Logger
+        // ============================================
+        services.AddScoped(typeof(ILoggerService<>), typeof(LoggerService<>));
 
         return services;
     }

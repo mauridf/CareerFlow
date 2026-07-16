@@ -5,13 +5,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\DTOs\" />
     <Folder Include="Common\Mappings\" />
     <Folder Include="Features\Admin\Commands\" />
     <Folder Include="Features\Admin\Handlers\" />
     <Folder Include="Features\Admin\Queries\" />
-    <Folder Include="Features\Auth\Commands\" />
-    <Folder Include="Features\Auth\Handlers\" />
     <Folder Include="Features\Auth\Queries\" />
     <Folder Include="Features\Certificates\Commands\" />
     <Folder Include="Features\Certificates\Handlers\" />
@@ -39,7 +36,6 @@
     <Folder Include="Features\SocialNetworks\Commands\" />
     <Folder Include="Features\SocialNetworks\Handlers\" />
     <Folder Include="Features\SocialNetworks\Queries\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
   <ItemGroup>
