@@ -7,45 +7,30 @@ namespace CareerFlow.Core.Entities;
 /// </summary>
 public class Skill : Entity<Guid>
 {
-    /// <summary>ID do perfil associado</summary>
     public Guid PersonId { get; private set; }
-
-    /// <summary>Perfil associado</summary>
     public Person? Person { get; private set; }
 
-    /// <summary>Nome da habilidade</summary>
     public string Name { get; private set; } = string.Empty;
-
-    /// <summary>Categoria da habilidade</summary>
-    public SkillCategory Category { get; private set; }
-
-    /// <summary>Nível de proficiência</summary>
+    public SkillCategory Category { get; private set; } = SkillCategory.Other;
     public ProficiencyLevel ProficiencyLevel { get; private set; } = ProficiencyLevel.Basic;
-
-    /// <summary>Habilidade principal (destaque)</summary>
     public bool IsPrimary { get; private set; }
-
-    /// <summary>Ordem de exibição</summary>
     public int DisplayOrder { get; private set; }
 
     private Skill() { }
 
-    /// <summary>
-    /// Cria uma nova habilidade
-    /// </summary>
     public static Skill Create(
         Guid personId,
         string name,
         SkillCategory category,
-        ProficiencyLevel level,
+        ProficiencyLevel level = ProficiencyLevel.Basic,
         bool isPrimary = false,
         int displayOrder = 0)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Nome da habilidade é obrigatório", nameof(name));
+            throw new DomainException("Nome da habilidade é obrigatório");
 
         if (name.Length > 100)
-            throw new ArgumentException("Nome da habilidade deve ter no máximo 100 caracteres", nameof(name));
+            throw new DomainException("Nome da habilidade deve ter no máximo 100 caracteres");
 
         return new Skill
         {
@@ -61,13 +46,13 @@ public class Skill : Entity<Guid>
         };
     }
 
-    /// <summary>
-    /// Atualiza a habilidade
-    /// </summary>
     public void Update(string name, SkillCategory category, ProficiencyLevel level, bool isPrimary, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Nome da habilidade é obrigatório", nameof(name));
+            throw new DomainException("Nome da habilidade é obrigatório");
+
+        if (name.Length > 100)
+            throw new DomainException("Nome da habilidade deve ter no máximo 100 caracteres");
 
         Name = name.Trim();
         Category = category;
@@ -75,5 +60,19 @@ public class Skill : Entity<Guid>
         IsPrimary = isPrimary;
         DisplayOrder = displayOrder;
         MarkAsUpdated();
+    }
+
+    public void TogglePrimary()
+    {
+        IsPrimary = !IsPrimary;
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Retorna o score da habilidade (0-100)
+    /// </summary>
+    public int GetScore()
+    {
+        return ProficiencyLevel.GetScore();
     }
 }
