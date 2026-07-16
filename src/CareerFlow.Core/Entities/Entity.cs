@@ -7,13 +7,13 @@ namespace CareerFlow.Core.Entities;
 public abstract class Entity<TId> : IEquatable<Entity<TId>>
 {
     /// <summary>Identificador único da entidade</summary>
-    public TId Id { get; protected set; } = default!;
+    public TId Id { get; set; } = default!;
 
     /// <summary>Data de criação do registro</summary>
-    public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>Data da última atualização</summary>
-    public DateTime UpdatedAt { get; protected set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Atualiza a data de modificação
@@ -28,7 +28,8 @@ public abstract class Entity<TId> : IEquatable<Entity<TId>>
     /// </summary>
     public void SetId(TId id)
     {
-        if (EqualityComparer<TId>.Default.Equals(Id, default!) || EqualityComparer<TId>.Default.Equals(Id, default(TId)!))
+        if (EqualityComparer<TId>.Default.Equals(Id, default!) ||
+            EqualityComparer<TId>.Default.Equals(Id, default(TId)!))
         {
             Id = id;
         }
@@ -45,7 +46,8 @@ public abstract class Entity<TId> : IEquatable<Entity<TId>>
         if (GetType() != other.GetType())
             return false;
 
-        if (EqualityComparer<TId>.Default.Equals(Id, default!) || EqualityComparer<TId>.Default.Equals(other.Id, default!))
+        if (EqualityComparer<TId>.Default.Equals(Id, default!) ||
+            EqualityComparer<TId>.Default.Equals(other.Id, default!))
             return false;
 
         return EqualityComparer<TId>.Default.Equals(Id, other.Id);

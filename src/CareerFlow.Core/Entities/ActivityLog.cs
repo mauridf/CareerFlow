@@ -2,23 +2,43 @@ namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Log de atividades do usuário para auditoria.
+/// Esta entidade tem setters públicos pois é criada pelo AuditInterceptor.
 /// </summary>
 public class ActivityLog : Entity<Guid>
 {
-    public Guid UserId { get; private set; }
-    public User? User { get; private set; }
+    /// <summary>ID do usuário que realizou a ação</summary>
+    public Guid UserId { get; set; }
 
-    public string Action { get; private set; } = string.Empty;
-    public string? EntityType { get; private set; }
-    public Guid? EntityId { get; private set; }
-    public string? OldValues { get; private set; }
-    public string? NewValues { get; private set; }
-    public string? Details { get; private set; }
-    public string? IpAddress { get; private set; }
-    public string? UserAgent { get; private set; }
+    /// <summary>Usuário associado (navigation property)</summary>
+    public User? User { get; set; }
 
-    private ActivityLog() { }
+    /// <summary>Ação realizada (created, updated, deleted, login, etc.)</summary>
+    public string Action { get; set; } = string.Empty;
 
+    /// <summary>Tipo da entidade afetada</summary>
+    public string? EntityType { get; set; }
+
+    /// <summary>ID da entidade afetada</summary>
+    public Guid? EntityId { get; set; }
+
+    /// <summary>Valores antigos (JSON) - apenas para updates/deletes</summary>
+    public string? OldValues { get; set; }
+
+    /// <summary>Valores novos (JSON) - apenas para creates/updates</summary>
+    public string? NewValues { get; set; }
+
+    /// <summary>Detalhes adicionais (JSON)</summary>
+    public string? Details { get; set; } = "{}";
+
+    /// <summary>IP do usuário</summary>
+    public string? IpAddress { get; set; }
+
+    /// <summary>User-Agent do navegador</summary>
+    public string? UserAgent { get; set; }
+
+    /// <summary>
+    /// Cria um novo log de atividade
+    /// </summary>
     public static ActivityLog Create(
         Guid userId,
         string action,
@@ -41,7 +61,8 @@ public class ActivityLog : Entity<Guid>
             Details = "{}",
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
     }
 }
