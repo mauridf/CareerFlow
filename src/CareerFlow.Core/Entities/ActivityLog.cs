@@ -8,8 +8,8 @@ namespace CareerFlow.Core.Entities;
 /// </summary>
 public class ActivityLog : Entity<Guid>
 {
-    /// <summary>ID do usuário que realizou a ação</summary>
-    public Guid UserId { get; set; }
+    /// <summary>ID do usuário que realizou a ação (null para ações do sistema)</summary>
+    public Guid? UserId { get; set; }
 
     /// <summary>Usuário associado (navigation property)</summary>
     public User? User { get; set; }

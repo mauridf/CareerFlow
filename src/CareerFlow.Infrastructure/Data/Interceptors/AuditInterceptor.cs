@@ -75,7 +75,7 @@ public class AuditInterceptor : SaveChangesInterceptor
         return new ActivityLog
         {
             Id = Guid.NewGuid(),
-            UserId = Guid.Empty, // Será preenchido pelo ICurrentUserService futuramente
+            // UserId será preenchido pelo ICurrentUserService futuramente
             Action = action,
             EntityType = entityType,
             EntityId = entityId,

@@ -70,7 +70,7 @@ namespace CareerFlow.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     action = table.Column<string>(type: "varchar(100)", maxLength: 500, nullable: false),
                     entity_type = table.Column<string>(type: "varchar(50)", maxLength: 500, nullable: true),
                     entity_id = table.Column<Guid>(type: "uuid", nullable: true),

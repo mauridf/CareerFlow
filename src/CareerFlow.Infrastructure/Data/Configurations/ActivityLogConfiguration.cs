@@ -12,7 +12,7 @@ public class ActivityLogConfiguration : BaseEntityConfiguration<ActivityLog>
 
         builder.ToTable("activity_logs");
 
-        builder.Property(a => a.UserId).HasColumnName("user_id").HasColumnType("uuid").IsRequired();
+        builder.Property(a => a.UserId).HasColumnName("user_id").HasColumnType("uuid");
         builder.Property(a => a.Action).HasColumnName("action").HasColumnType("varchar(100)").IsRequired();
         builder.Property(a => a.EntityType).HasColumnName("entity_type").HasColumnType("varchar(50)");
         builder.Property(a => a.EntityId).HasColumnName("entity_id").HasColumnType("uuid");
