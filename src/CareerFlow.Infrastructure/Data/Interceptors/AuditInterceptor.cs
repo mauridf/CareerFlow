@@ -36,7 +36,8 @@ public class AuditInterceptor : SaveChangesInterceptor
             .Where(e => e.State == EntityState.Added ||
                         e.State == EntityState.Modified ||
                         e.State == EntityState.Deleted)
-            .Where(e => e.Entity is not ActivityLog);
+            .Where(e => e.Entity is not ActivityLog)
+            .ToList();
 
         foreach (var entry in entries)
         {
