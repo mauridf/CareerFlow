@@ -2,6 +2,8 @@
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
 
 // Enums
 global using CareerFlow.Core.Enums;
@@ -17,3 +19,6 @@ global using CareerFlow.Core.Events;
 
 // Exceptions
 global using CareerFlow.Core.Exceptions;
+
+// Interfaces
+global using CareerFlow.Core.Interfaces;
