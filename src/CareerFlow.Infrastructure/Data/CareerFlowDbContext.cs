@@ -1,8 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using CareerFlow.Core.Entities;
 using CareerFlow.Infrastructure.Data.Configurations;
 using CareerFlow.Infrastructure.Data.Interceptors;
 using CareerFlow.Infrastructure.Outbox;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace CareerFlow.Infrastructure.Data;
 
@@ -34,16 +35,19 @@ public class CareerFlowDbContext : DbContext
     // Interceptors
     // ============================================
     private readonly AuditInterceptor? _auditInterceptor;
+    private readonly DomainEventInterceptor? _domainEventInterceptor;
 
     /// <summary>
     /// Construtor para injeção de dependência
     /// </summary>
     public CareerFlowDbContext(
         DbContextOptions<CareerFlowDbContext> options,
-        AuditInterceptor? auditInterceptor = null)
+        AuditInterceptor? auditInterceptor = null,
+        DomainEventInterceptor? domainEventInterceptor = null)
         : base(options)
     {
         _auditInterceptor = auditInterceptor;
+        _domainEventInterceptor = domainEventInterceptor;
     }
 
     /// <summary>
@@ -51,10 +55,7 @@ public class CareerFlowDbContext : DbContext
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Aplica todas as configurações do assembly atual
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CareerFlowDbContext).Assembly);
-
-        // Configurações globais
         ConfigureGlobalSettings(modelBuilder);
     }
 
@@ -63,10 +64,16 @@ public class CareerFlowDbContext : DbContext
     /// </summary>
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        var interceptors = new List<IInterceptor>();
+
         if (_auditInterceptor != null)
-        {
-            optionsBuilder.AddInterceptors(_auditInterceptor);
-        }
+            interceptors.Add(_auditInterceptor);
+
+        if (_domainEventInterceptor != null)
+            interceptors.Add(_domainEventInterceptor);
+
+        if (interceptors.Count > 0)
+            optionsBuilder.AddInterceptors(interceptors.ToArray());
     }
 
     /// <summary>
@@ -74,21 +81,18 @@ public class CareerFlowDbContext : DbContext
     /// </summary>
     private static void ConfigureGlobalSettings(ModelBuilder modelBuilder)
     {
-        // Todas as entidades herdam de Entity<Guid>, aplicamos configurações globais
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            // Configuração padrão para propriedades string
             foreach (var property in entityType.GetProperties()
                 .Where(p => p.ClrType == typeof(string)))
             {
-                property.SetMaxLength(500); // Tamanho máximo padrão
+                property.SetMaxLength(500);
             }
 
-            // Configuração padrão para DateTime
             foreach (var property in entityType.GetProperties()
                 .Where(p => p.ClrType == typeof(DateTime)))
             {
-                property.SetColumnType("timestamptz"); // UTC timestamp
+                property.SetColumnType("timestamptz");
             }
         }
     }
@@ -98,11 +102,8 @@ public class CareerFlowDbContext : DbContext
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Atualiza timestamps automaticamente
         UpdateAuditFields();
-
         var result = await base.SaveChangesAsync(cancellationToken);
-
         return result;
     }
 
@@ -121,10 +122,8 @@ public class CareerFlowDbContext : DbContext
                 if (entry.State == EntityState.Added)
                 {
                     entity.SetId(Guid.NewGuid());
-                    // CreatedAt já vem da entidade
                 }
 
-                // Atualiza UpdatedAt para Modified
                 if (entry.State == EntityState.Modified)
                 {
                     entity.MarkAsUpdated();

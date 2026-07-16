@@ -6,14 +6,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\Interceptors\" />
     <Folder Include="Data\Migrations\" />
     <Folder Include="External\Analytics\" />
     <Folder Include="External\Cache\" />
     <Folder Include="External\MessageBus\" />
     <Folder Include="External\PDF\" />
     <Folder Include="External\Storage\" />
-    <Folder Include="Outbox\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
 
