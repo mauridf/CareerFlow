@@ -1,6 +1,7 @@
+using CareerFlow.Core.Entities;
+using CareerFlow.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using CareerFlow.Core.Entities;
 
 namespace CareerFlow.Infrastructure.Data.Configurations;
 
@@ -74,8 +75,8 @@ public class UserConfiguration : BaseEntityConfiguration<User>
         builder.Property(u => u.Role)
             .HasColumnName("role")
             .HasColumnType("varchar(30)")
-            .HasDefaultValue("user")
             .HasConversion<string>()
+            .HasDefaultValue(UserRole.User)
             .IsRequired();
 
         builder.Property(u => u.IsActive)

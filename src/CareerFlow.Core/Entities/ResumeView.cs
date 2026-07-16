@@ -10,7 +10,7 @@ public class ResumeView : Entity<Guid>
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
 
-    public string? IpAddress { get; private set; }
+    public IPAddress? IpAddress { get; private set; }
     public string? UserAgent { get; private set; }
     public string? Referrer { get; private set; }
     public string? ViewerCountry { get; private set; }
@@ -23,7 +23,7 @@ public class ResumeView : Entity<Guid>
 
     public static ResumeView Record(
         Guid personId,
-        string? ipAddress,
+        IPAddress? ipAddress,
         string? userAgent,
         string? referrer = null,
         string? source = "direct")

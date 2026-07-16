@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
@@ -31,7 +33,7 @@ public class ActivityLog : Entity<Guid>
     public string? Details { get; set; } = "{}";
 
     /// <summary>IP do usuário</summary>
-    public string? IpAddress { get; set; }
+    public IPAddress? IpAddress { get; set; }
 
     /// <summary>User-Agent do navegador</summary>
     public string? UserAgent { get; set; }
@@ -46,7 +48,7 @@ public class ActivityLog : Entity<Guid>
         Guid? entityId = null,
         string? oldValues = null,
         string? newValues = null,
-        string? ipAddress = null,
+        IPAddress? ipAddress = null,
         string? userAgent = null)
     {
         return new ActivityLog

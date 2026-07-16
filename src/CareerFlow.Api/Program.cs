@@ -1,5 +1,7 @@
 using CareerFlow.Api.Extensions;
 using CareerFlow.Api.Middlewares;
+using CareerFlow.Application;
+using CareerFlow.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -110,6 +112,12 @@ try
     builder.Services.AddApplicationServices();
 
     // ============================================
+    // Registrar serviços das camadas
+    // ============================================
+    builder.Services.AddApplication();      // MediatR, FluentValidation, AutoMapper
+    builder.Services.AddInfrastructure(builder.Configuration); // EF Core, Repos, Outbox
+
+    // ============================================
     // Portas e URLs
     // ============================================
     builder.WebHost.UseUrls("http://localhost:5000");
@@ -151,6 +159,21 @@ try
     });
 
     var app = builder.Build();
+
+    // ============================================
+    // Iniciar OutboxProcessor após o app iniciar
+    // ============================================
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        var outboxProcessor = app.Services.GetRequiredService<CareerFlow.Infrastructure.Outbox.OutboxProcessor>();
+        outboxProcessor.Start();
+    });
+
+    app.Lifetime.ApplicationStopping.Register(() =>
+    {
+        var outboxProcessor = app.Services.GetRequiredService<CareerFlow.Infrastructure.Outbox.OutboxProcessor>();
+        outboxProcessor.Stop();
+    });
 
     // ============================================
     // Executar Migrations e Seed (Desenvolvimento)

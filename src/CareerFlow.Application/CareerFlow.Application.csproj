@@ -5,7 +5,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Behaviors\" />
     <Folder Include="Common\DTOs\" />
     <Folder Include="Common\Mappings\" />
     <Folder Include="Features\Admin\Commands\" />

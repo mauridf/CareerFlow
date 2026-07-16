@@ -1,6 +1,7 @@
+using CareerFlow.Core.Entities;
+using CareerFlow.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using CareerFlow.Core.Entities;
 
 namespace CareerFlow.Infrastructure.Data.Configurations;
 
@@ -26,7 +27,7 @@ public class ResumeAnalyticsConfiguration : BaseEntityConfiguration<ResumeAnalyt
         builder.Property(r => r.DetectedKeywords).HasColumnName("detected_keywords").HasColumnType("jsonb");
         builder.Property(r => r.MissingKeywords).HasColumnName("missing_keywords").HasColumnType("jsonb");
         builder.Property(r => r.AnalyzedAt).HasColumnName("analyzed_at").HasColumnType("timestamptz");
-        builder.Property(r => r.Status).HasColumnName("status").HasColumnType("varchar(30)").HasConversion<string>().HasDefaultValue("Draft");
+        builder.Property(r => r.Status).HasColumnName("status").HasColumnType("varchar(30)").HasConversion<string>().HasDefaultValue(ResumeStatus.Draft);
         builder.Property(r => r.PublishedAt).HasColumnName("published_at").HasColumnType("timestamptz");
 
         builder.HasIndex(r => r.PersonId).IsUnique().HasDatabaseName("idx_resume_analytics_person");
