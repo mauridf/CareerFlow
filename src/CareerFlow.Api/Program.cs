@@ -1,8 +1,9 @@
 using CareerFlow.Api.Extensions;
 using CareerFlow.Api.Middlewares;
+using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
-using Scalar.AspNetCore;
 
 // ============================================
 // Configuração inicial do Serilog (Bootstrap)
@@ -150,6 +151,30 @@ try
     });
 
     var app = builder.Build();
+
+    // ============================================
+    // Executar Migrations e Seed (Desenvolvimento)
+    // ============================================
+    if (app.Environment.IsDevelopment())
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlow.Infrastructure.Data.CareerFlowDbContext>();
+
+        try
+        {
+            Log.Information("📊 Aplicando migrations...");
+            await dbContext.Database.MigrateAsync();
+            Log.Information("✅ Migrations aplicadas com sucesso");
+
+            Log.Information("🌱 Aplicando dados iniciais (seed)...");
+            await CareerFlow.Infrastructure.Data.Migrations.SeedData.SeedAsync(dbContext);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "❌ Erro ao aplicar migrations/seed");
+            // Não impede a aplicação de iniciar
+        }
+    }
 
     // ============================================
     // Pipeline de Middleware
