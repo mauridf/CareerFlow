@@ -6,9 +6,6 @@
 
   <ItemGroup>
     <Folder Include="Common\Mappings\" />
-    <Folder Include="Features\Admin\Commands\" />
-    <Folder Include="Features\Admin\Handlers\" />
-    <Folder Include="Features\Admin\Queries\" />
     <Folder Include="Features\Auth\Queries\" />
   </ItemGroup>
 
