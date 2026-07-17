@@ -358,6 +358,8 @@ public class AnalyzeResumeHandler : IRequestHandler<AnalyzeResumeCommand, Resume
     private readonly IResumeAnalyticsRepository _analyticsRepo;
     private readonly IResumeViewRepository _viewRepo;
     private readonly ICurrentUserService _currentUser;
+    private readonly IResumeAnalyzerService _analyzer;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AnalyzeResumeHandler> _logger;
 
     public AnalyzeResumeHandler(
@@ -365,12 +367,16 @@ public class AnalyzeResumeHandler : IRequestHandler<AnalyzeResumeCommand, Resume
         IResumeAnalyticsRepository analyticsRepo,
         IResumeViewRepository viewRepo,
         ICurrentUserService currentUser,
+        IResumeAnalyzerService analyzer,
+        IUnitOfWork unitOfWork,
         ILogger<AnalyzeResumeHandler> logger)
     {
         _personRepo = personRepo;
         _analyticsRepo = analyticsRepo;
         _viewRepo = viewRepo;
         _currentUser = currentUser;
+        _analyzer = analyzer;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -378,16 +384,35 @@ public class AnalyzeResumeHandler : IRequestHandler<AnalyzeResumeCommand, Resume
     {
         var personId = await _currentUser.GetPersonIdAsync(ct);
         var person = await _personRepo.GetByIdAsync(personId, ct);
-        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
 
+        var atsResult = await _analyzer.AnalyzeAtsCompatibilityAsync(personId, ct);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
         if (analytics == null)
-            return new ResumeAnalyticsResponse();
+        {
+            analytics = ResumeAnalytics.Create(personId);
+            await _analyticsRepo.AddAsync(analytics, ct);
+        }
+
+        analytics.UpdateAtsAnalysis(
+            atsResult.Score,
+            atsResult.Compatibility,
+            string.Join("; ", atsResult.Issues),
+            string.Join("; ", atsResult.Suggestions));
+
+        analytics.UpdateKeywords(
+            string.Join(", ", atsResult.DetectedKeywords),
+            string.Join(", ", atsResult.MissingKeywords));
+
+        _analyticsRepo.Update(analytics);
 
         var totalViews = await _viewRepo.CountByPersonIdAsync(personId, ct);
         var uniqueViews = await _viewRepo.CountUniqueByPersonIdAsync(personId, ct);
         var pdfDownloads = await _viewRepo.CountPdfDownloadsAsync(personId, ct);
 
-        _logger.LogInformation("✅ Análise do currículo concluída para PersonId={PersonId}", personId);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _logger.LogInformation("✅ Análise ATS concluída para PersonId={PersonId}: Score={Score}", personId, atsResult.Score);
 
         return new ResumeAnalyticsResponse
         {
@@ -441,5 +466,88 @@ public class UnpublishResumeHandler : IRequestHandler<UnpublishResumeCommand>
         }
 
         await _unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
+public class GetResumeSuggestionsHandler : IRequestHandler<GetResumeSuggestionsQuery, IReadOnlyList<SuggestionDto>>
+{
+    private readonly IResumeSuggestionRepository _suggestionRepo;
+    private readonly ICurrentUserService _currentUser;
+
+    public GetResumeSuggestionsHandler(
+        IResumeSuggestionRepository suggestionRepo,
+        ICurrentUserService currentUser)
+    {
+        _suggestionRepo = suggestionRepo;
+        _currentUser = currentUser;
+    }
+
+    public async Task<IReadOnlyList<SuggestionDto>> Handle(GetResumeSuggestionsQuery req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var suggestions = await _suggestionRepo.GetByPersonIdAsync(personId, ct);
+
+        return suggestions.Select(s => new SuggestionDto
+        {
+            Id = s.Id,
+            Category = s.Category,
+            Title = s.Title,
+            Description = s.Description,
+            Priority = s.Priority,
+            IsApplied = s.IsApplied,
+            AppliedAt = s.AppliedAt,
+            CreatedAt = s.CreatedAt
+        }).ToList().AsReadOnly();
+    }
+}
+
+public class GenerateResumeSuggestionsHandler : IRequestHandler<GenerateResumeSuggestionsCommand, IReadOnlyList<SuggestionDto>>
+{
+    private readonly IResumeSuggestionRepository _suggestionRepo;
+    private readonly IResumeAnalyzerService _analyzer;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<GenerateResumeSuggestionsHandler> _logger;
+
+    public GenerateResumeSuggestionsHandler(
+        IResumeSuggestionRepository suggestionRepo,
+        IResumeAnalyzerService analyzer,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork,
+        ILogger<GenerateResumeSuggestionsHandler> logger)
+    {
+        _suggestionRepo = suggestionRepo;
+        _analyzer = analyzer;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<IReadOnlyList<SuggestionDto>> Handle(GenerateResumeSuggestionsCommand req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+
+        var results = await _analyzer.GenerateSuggestionsAsync(personId, ct);
+
+        var suggestions = results.Select(r =>
+            ResumeSuggestion.Create(personId, r.Category, r.Title, r.Description, r.Priority)
+        ).ToList();
+
+        await _suggestionRepo.AddRangeAsync(suggestions, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _logger.LogInformation("💡 {Count} sugestões geradas e salvas para PersonId={PersonId}", suggestions.Count, personId);
+
+        return suggestions.Select(s => new SuggestionDto
+        {
+            Id = s.Id,
+            Category = s.Category,
+            Title = s.Title,
+            Description = s.Description,
+            Priority = s.Priority,
+            IsApplied = s.IsApplied,
+            AppliedAt = s.AppliedAt,
+            CreatedAt = s.CreatedAt
+        }).ToList().AsReadOnly();
     }
 }

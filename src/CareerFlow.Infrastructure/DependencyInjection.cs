@@ -1,6 +1,8 @@
 using CareerFlow.Core.Interfaces;
 using CareerFlow.Infrastructure.Data;
 using CareerFlow.Infrastructure.Data.Interceptors;
+using CareerFlow.Infrastructure.External.Analytics;
+using CareerFlow.Infrastructure.External.Cache;
 using CareerFlow.Infrastructure.External.Email;
 using CareerFlow.Infrastructure.External.PDF;
 using CareerFlow.Infrastructure.Outbox;
@@ -71,8 +73,11 @@ public static class DependencyInjection
         services.AddScoped<ISocialNetworkRepository, SocialNetworkRepository>();
         services.AddScoped<IResumeViewRepository, ResumeViewRepository>();
         services.AddScoped<IResumeAnalyticsRepository, ResumeAnalyticsRepository>();
+        services.AddScoped<IResumeSuggestionRepository, ResumeSuggestionRepository>();
         services.AddScoped<IPdfGeneratorService, QuestPdfGeneratorService>();
         services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddSingleton<ICacheService, RedisCacheService>();
+        services.AddScoped<IResumeAnalyzerService, ResumeAnalyzerService>();
 
         // ============================================
         // Outbox Processor (Singleton - Timer interno)

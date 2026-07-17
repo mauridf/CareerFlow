@@ -93,6 +93,18 @@ public class ResumeAnalyticsResponse
     public int CompletionPercentage { get; set; }
 }
 
+public class SuggestionDto
+{
+    public Guid Id { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Priority { get; set; } = "medium";
+    public bool IsApplied { get; set; }
+    public DateTime? AppliedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public class DashboardStatsResponse
 {
     public int TotalViews { get; set; }

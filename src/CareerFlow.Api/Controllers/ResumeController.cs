@@ -69,4 +69,25 @@ public class ResumeController : ControllerBase
         var pdf = await _mediator.Send(new GenerateAtsResumeCommand());
         return File(pdf, "application/pdf", "curriculo-ats.pdf");
     }
+
+    [HttpPost("analyze")]
+    public async Task<IActionResult> Analyze()
+    {
+        var result = await _mediator.Send(new AnalyzeResumeCommand());
+        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+    }
+
+    [HttpGet("suggestions")]
+    public async Task<IActionResult> GetSuggestions()
+    {
+        var result = await _mediator.Send(new GetResumeSuggestionsQuery());
+        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+    }
+
+    [HttpPost("suggestions/generate")]
+    public async Task<IActionResult> GenerateSuggestions()
+    {
+        var result = await _mediator.Send(new GenerateResumeSuggestionsCommand());
+        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+    }
 }
