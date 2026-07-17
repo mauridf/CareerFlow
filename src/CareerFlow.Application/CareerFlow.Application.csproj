@@ -10,8 +10,6 @@
     <Folder Include="Features\Admin\Handlers\" />
     <Folder Include="Features\Admin\Queries\" />
     <Folder Include="Features\Auth\Queries\" />
-    <Folder Include="Features\Dashboard\Handlers\" />
-    <Folder Include="Features\Dashboard\Queries\" />
   </ItemGroup>
 
   <ItemGroup>
