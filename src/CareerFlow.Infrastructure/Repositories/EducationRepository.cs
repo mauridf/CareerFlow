@@ -5,11 +5,11 @@ using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Infrastructure.Repositories;
 
-public class ExperienceRepository : GenericRepository<Experience>, IExperienceRepository
+public class EducationRepository : GenericRepository<Education>, IEducationRepository
 {
-    public ExperienceRepository(CareerFlowDbContext context) : base(context) { }
+    public EducationRepository(CareerFlowDbContext context) : base(context) { }
 
-    public async Task<IReadOnlyList<Experience>> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Education>> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Where(e => e.PersonId == personId)
