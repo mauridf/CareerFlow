@@ -9,7 +9,6 @@
     <Folder Include="External\Analytics\" />
     <Folder Include="External\Cache\" />
     <Folder Include="External\MessageBus\" />
-    <Folder Include="External\PDF\" />
     <Folder Include="External\Storage\" />
   </ItemGroup>
 

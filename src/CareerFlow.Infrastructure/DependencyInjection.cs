@@ -1,11 +1,12 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using CareerFlow.Core.Interfaces;
 using CareerFlow.Infrastructure.Data;
 using CareerFlow.Infrastructure.Data.Interceptors;
+using CareerFlow.Infrastructure.External.PDF;
 using CareerFlow.Infrastructure.Outbox;
 using CareerFlow.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CareerFlow.Infrastructure;
 
@@ -67,6 +68,9 @@ public static class DependencyInjection
         services.AddScoped<ICertificateRepository, CertificateRepository>();
         services.AddScoped<ILanguageRepository, LanguageRepository>();
         services.AddScoped<ISocialNetworkRepository, SocialNetworkRepository>();
+        services.AddScoped<IResumeViewRepository, ResumeViewRepository>();
+        services.AddScoped<IResumeAnalyticsRepository, ResumeAnalyticsRepository>();
+        services.AddScoped<IPdfGeneratorService, QuestPdfGeneratorService>();
 
         // ============================================
         // Outbox Processor (Singleton - Timer interno)

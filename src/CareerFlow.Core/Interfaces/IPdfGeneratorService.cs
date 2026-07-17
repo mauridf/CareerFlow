@@ -56,6 +56,7 @@ public class ResumeExperienceData
     public string? EmploymentType { get; set; }
     public string? City { get; set; }
     public string? State { get; set; }
+    public string? DurationFormatted { get; set; }
 }
 
 public class ResumeEducationData

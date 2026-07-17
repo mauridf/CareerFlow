@@ -12,9 +12,6 @@
     <Folder Include="Features\Auth\Queries\" />
     <Folder Include="Features\Dashboard\Handlers\" />
     <Folder Include="Features\Dashboard\Queries\" />
-    <Folder Include="Features\Resume\Commands\" />
-    <Folder Include="Features\Resume\Handlers\" />
-    <Folder Include="Features\Resume\Queries\" />
   </ItemGroup>
 
   <ItemGroup>
