@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CareerFlow.Core.Entities;
+using CareerFlow.Core.Interfaces;
 using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Infrastructure.Repositories;
@@ -7,7 +8,7 @@ namespace CareerFlow.Infrastructure.Repositories;
 /// <summary>
 /// Repositório específico para a entidade Person.
 /// </summary>
-public class PersonRepository : GenericRepository<Person>
+public class PersonRepository : GenericRepository<Person>, IPersonRepository
 {
     public PersonRepository(CareerFlowDbContext context) : base(context)
     {

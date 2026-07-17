@@ -24,9 +24,6 @@
     <Folder Include="Features\Languages\Commands\" />
     <Folder Include="Features\Languages\Handlers\" />
     <Folder Include="Features\Languages\Queries\" />
-    <Folder Include="Features\Profile\Commands\" />
-    <Folder Include="Features\Profile\Handlers\" />
-    <Folder Include="Features\Profile\Queries\" />
     <Folder Include="Features\Resume\Commands\" />
     <Folder Include="Features\Resume\Handlers\" />
     <Folder Include="Features\Resume\Queries\" />
@@ -44,6 +41,7 @@
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />

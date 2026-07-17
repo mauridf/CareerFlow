@@ -60,7 +60,7 @@ public static class DependencyInjection
         // ============================================
         services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
         services.AddScoped<UserRepository>();
-        services.AddScoped<PersonRepository>();
+        services.AddScoped<IPersonRepository, PersonRepository>();
         services.AddScoped<SkillRepository>();
         services.AddScoped<ExperienceRepository>();
 

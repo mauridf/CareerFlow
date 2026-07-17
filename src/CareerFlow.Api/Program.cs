@@ -262,6 +262,11 @@ try
     // ============================================
     builder.WebHost.UseUrls("http://localhost:5000");
 
+    // ============================================
+    // Configurar servir arquivos estáticos da pasta uploads
+    // ============================================
+    builder.Services.AddDirectoryBrowser();
+
     var app = builder.Build();
 
     // ============================================
@@ -336,6 +341,9 @@ try
     // 6. Authentication e Authorization (serão adicionados no passo de Auth)
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // Servir arquivos estáticos (uploads)
+    app.UseStaticFiles();
 
     // 7. Endpoints
     app.MapControllers();
