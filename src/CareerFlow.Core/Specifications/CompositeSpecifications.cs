@@ -24,10 +24,10 @@ public class AndSpecification<T> : BaseSpecification<T>
         var parameter = Expression.Parameter(typeof(T));
 
         var leftVisitor = new ReplaceExpressionVisitor(left.Parameters[0], parameter);
-        var leftBody = leftVisitor.Visit(left.Body);
+        var leftBody = leftVisitor.Visit(left.Body)!;
 
         var rightVisitor = new ReplaceExpressionVisitor(right.Parameters[0], parameter);
-        var rightBody = rightVisitor.Visit(right.Body);
+        var rightBody = rightVisitor.Visit(right.Body)!;
 
         var combinedBody = Expression.AndAlso(leftBody, rightBody);
 
@@ -57,10 +57,10 @@ public class OrSpecification<T> : BaseSpecification<T>
         var parameter = Expression.Parameter(typeof(T));
 
         var leftVisitor = new ReplaceExpressionVisitor(left.Parameters[0], parameter);
-        var leftBody = leftVisitor.Visit(left.Body);
+        var leftBody = leftVisitor.Visit(left.Body)!;
 
         var rightVisitor = new ReplaceExpressionVisitor(right.Parameters[0], parameter);
-        var rightBody = rightVisitor.Visit(right.Body);
+        var rightBody = rightVisitor.Visit(right.Body)!;
 
         var combinedBody = Expression.OrElse(leftBody, rightBody);
 
@@ -85,7 +85,7 @@ public class NotSpecification<T> : BaseSpecification<T>
     {
         var parameter = Expression.Parameter(typeof(T));
         var visitor = new ReplaceExpressionVisitor(expression.Parameters[0], parameter);
-        var body = visitor.Visit(expression.Body);
+        var body = visitor.Visit(expression.Body)!;
         var negatedBody = Expression.Not(body);
 
         return Expression.Lambda<Func<T, bool>>(negatedBody, parameter);

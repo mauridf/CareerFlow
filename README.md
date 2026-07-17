@@ -218,6 +218,43 @@ CareerFlow.sln
 
 ---
 
+## ⏰ Scheduler (Jobs)
+
+O CareerFlow possui um serviço de scheduler baseado em **Quartz.NET** para tarefas automatizadas:
+
+| Job | Cron | Descrição |
+|-----|------|-----------|
+| `ResumeAnalyticsJob` | `0 0 2 * * ?` (Diário 02:00) | Atualiza analytics de todos os currículos |
+| `ProfileCompletionReminderJob` | `0 0 8 ? * MON` (Segunda 08:00) | Lembretes para completar perfil |
+| `InactiveUserNotificationJob` | `0 0 9 1 * ?` (Dia 1 09:00) | Notificação para usuários inativos |
+| `CleanupJob` | `0 0 3 ? * SUN` (Domingo 03:00) | Limpeza de dados antigos (LGPD) |
+| `PremiumExpirationJob` | `0 0 4 * * ?` (Diário 04:00) | Verifica expiração de premium |
+| `ResumeSuggestionJob` | `0 0 5 * * ?` (Diário 05:00) | Gera sugestões de melhoria |
+
+### Executar Scheduler
+
+```bash
+cd src/CareerFlow.Scheduler
+dotnet run
+```
+## Build e Teste
+
+```
+cd C:\Projetos\CareerFlow
+
+# Restaurar pacotes do Scheduler
+dotnet restore src/CareerFlow.Scheduler/CareerFlow.Scheduler.csproj
+
+# Build completo
+dotnet build
+
+# Executar Scheduler
+dotnet run --project src/CareerFlow.Scheduler/CareerFlow.Scheduler.csproj
+
+```
+
+---
+
 ## Como Executar
 
 ### Pré-requisitos

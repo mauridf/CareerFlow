@@ -83,6 +83,15 @@ public class ResumeAnalytics : Entity<Guid>
         MarkAsUpdated();
     }
 
+    public void UpdateMetrics(int totalViews, int uniqueViews, int pdfDownloads, int averageViewDurationSeconds)
+    {
+        TotalViews = totalViews;
+        UniqueViews = uniqueViews;
+        PdfDownloads = pdfDownloads;
+        AverageViewDurationSeconds = averageViewDurationSeconds;
+        MarkAsUpdated();
+    }
+
     public void UpdateAtsAnalysis(int score, int compatibility, string? issues, string? suggestions)
     {
         AtsScore = score;
