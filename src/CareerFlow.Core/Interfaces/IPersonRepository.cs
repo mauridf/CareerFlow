@@ -8,4 +8,5 @@ public interface IPersonRepository : IRepository<Person>
     Task<Person?> GetFullProfileAsync(Guid personId, CancellationToken cancellationToken = default);
     Task<Person?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Person>> GetAllWithBasicDetailsAsync(CancellationToken cancellationToken = default);
 }

@@ -20,4 +20,18 @@ public class SharedResumeController : ControllerBase
         var result = await _mediator.Send(new GetPublicResumeQuery(slug));
         return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
     }
+
+    [HttpGet("{slug}/pdf")]
+    public async Task<IActionResult> DownloadPdf(string slug)
+    {
+        var pdf = await _mediator.Send(new GetPublicResumePdfQuery(slug));
+        return File(pdf, "application/pdf", $"curriculo-{slug}.pdf");
+    }
+
+    [HttpGet("{slug}/ats-pdf")]
+    public async Task<IActionResult> DownloadAtsPdf(string slug)
+    {
+        var pdf = await _mediator.Send(new GetPublicAtsResumePdfQuery(slug));
+        return File(pdf, "application/pdf", $"curriculo-ats-{slug}.pdf");
+    }
 }

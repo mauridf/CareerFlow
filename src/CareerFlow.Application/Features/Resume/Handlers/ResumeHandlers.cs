@@ -551,3 +551,107 @@ public class GenerateResumeSuggestionsHandler : IRequestHandler<GenerateResumeSu
         }).ToList().AsReadOnly();
     }
 }
+
+public class GetPublicResumePdfHandler : IRequestHandler<GetPublicResumePdfQuery, byte[]>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly IPdfGeneratorService _pdfGenerator;
+    private readonly IResumeViewRepository _viewRepo;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<GetPublicResumePdfHandler> _logger;
+
+    public GetPublicResumePdfHandler(
+        IPersonRepository personRepo,
+        IPdfGeneratorService pdfGenerator,
+        IResumeViewRepository viewRepo,
+        IResumeAnalyticsRepository analyticsRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<GetPublicResumePdfHandler> logger)
+    {
+        _personRepo = personRepo;
+        _pdfGenerator = pdfGenerator;
+        _viewRepo = viewRepo;
+        _analyticsRepo = analyticsRepo;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<byte[]> Handle(GetPublicResumePdfQuery req, CancellationToken ct)
+    {
+        var person = await _personRepo.GetBySlugAsync(req.Slug, ct)
+            ?? throw new NotFoundException("Currículo público não encontrado");
+
+        var resumeData = ResumeMapper.MapToResumeData(person);
+        var pdf = await _pdfGenerator.GenerateResumePdfAsync(resumeData, ct);
+
+        var view = ResumeView.Record(person.Id, null, null, null, "pdf");
+        view.MarkPdfDownloaded();
+        await _viewRepo.AddAsync(view, ct);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(person.Id, ct);
+        if (analytics != null)
+        {
+            analytics.IncrementPdfDownload();
+            _analyticsRepo.Update(analytics);
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _logger.LogInformation("📄 PDF público baixado: {Slug}", req.Slug);
+
+        return pdf;
+    }
+}
+
+public class GetPublicAtsResumePdfHandler : IRequestHandler<GetPublicAtsResumePdfQuery, byte[]>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly IPdfGeneratorService _pdfGenerator;
+    private readonly IResumeViewRepository _viewRepo;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<GetPublicAtsResumePdfHandler> _logger;
+
+    public GetPublicAtsResumePdfHandler(
+        IPersonRepository personRepo,
+        IPdfGeneratorService pdfGenerator,
+        IResumeViewRepository viewRepo,
+        IResumeAnalyticsRepository analyticsRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<GetPublicAtsResumePdfHandler> logger)
+    {
+        _personRepo = personRepo;
+        _pdfGenerator = pdfGenerator;
+        _viewRepo = viewRepo;
+        _analyticsRepo = analyticsRepo;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<byte[]> Handle(GetPublicAtsResumePdfQuery req, CancellationToken ct)
+    {
+        var person = await _personRepo.GetBySlugAsync(req.Slug, ct)
+            ?? throw new NotFoundException("Currículo público não encontrado");
+
+        var resumeData = ResumeMapper.MapToResumeData(person);
+        var pdf = await _pdfGenerator.GenerateAtsResumePdfAsync(resumeData, ct);
+
+        var view = ResumeView.Record(person.Id, null, null, null, "pdf-ats");
+        view.MarkPdfDownloaded();
+        await _viewRepo.AddAsync(view, ct);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(person.Id, ct);
+        if (analytics != null)
+        {
+            analytics.IncrementPdfDownload();
+            _analyticsRepo.Update(analytics);
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _logger.LogInformation("📄 PDF ATS público baixado: {Slug}", req.Slug);
+
+        return pdf;
+    }
+}

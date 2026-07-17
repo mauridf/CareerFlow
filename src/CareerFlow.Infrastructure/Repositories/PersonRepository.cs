@@ -67,4 +67,17 @@ public class PersonRepository : GenericRepository<Person>, IPersonRepository
     {
         return await _dbSet.AnyAsync(p => p.ResumeSlug == slug, cancellationToken);
     }
+
+    /// <summary>
+    /// Retorna todas as pessoas com Skills, Experiences e Educations carregados
+    /// </summary>
+    public async Task<IReadOnlyList<Person>> GetAllWithBasicDetailsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(p => p.Skills)
+            .Include(p => p.Experiences)
+            .Include(p => p.Educations)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
 }
