@@ -15,6 +15,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, AuthResp
     private readonly IRepository<Person> _personRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IEmailService _emailService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<RegisterUserHandler> _logger;
 
@@ -23,6 +24,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, AuthResp
         IRepository<Person> personRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
+        IEmailService emailService,
         IUnitOfWork unitOfWork,
         ILogger<RegisterUserHandler> logger)
     {
@@ -30,6 +32,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, AuthResp
         _personRepository = personRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _emailService = emailService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -55,6 +58,17 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, AuthResp
         await _userRepository.AddAsync(user, cancellationToken);
         await _personRepository.AddAsync(person, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Envia email de verificação
+        try
+        {
+            var verificationToken = _tokenService.GenerateEmailVerificationToken(user);
+            await _emailService.SendEmailVerificationAsync(user.Email, user.Name, verificationToken, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Falha ao enviar email de verificação para {Email}", user.Email);
+        }
 
         // Gera tokens
         var tokens = await _tokenService.GenerateTokensAsync(user, cancellationToken);

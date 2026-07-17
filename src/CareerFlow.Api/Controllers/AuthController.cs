@@ -132,11 +132,12 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest request)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
         _logger.LogInformation("📧 Solicitação de recuperação de senha: {Email}", request.Email);
 
-        // TODO: Implementar envio de email com token de recuperação
+        await _mediator.Send(new ForgotPasswordCommand(request.Email));
+
         return Ok(new
         {
             success = true,
@@ -151,9 +152,11 @@ public class AuthController : ControllerBase
     [HttpPost("reset-password")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ResetPassword([FromBody] ResetPasswordRequest request)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
-        // TODO: Implementar redefinição de senha com token
+        await _mediator.Send(new ResetPasswordCommand(request.Token, request.NewPassword));
+
         return Ok(new
         {
             success = true,
@@ -169,13 +172,56 @@ public class AuthController : ControllerBase
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult ChangePassword([FromBody] ChangePasswordRequest request)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        // TODO: Implementar alteração de senha
+        await _mediator.Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword));
+
         return Ok(new
         {
             success = true,
             data = new { message = "Senha alterada com sucesso." },
+            meta = new { timestamp = DateTime.UtcNow }
+        });
+    }
+
+    /// <summary>
+    /// Verifica o email do usuário
+    /// </summary>
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+    {
+        _logger.LogInformation("📧 Requisição de verificação de email");
+
+        await _mediator.Send(new VerifyEmailCommand(request.Token));
+
+        return Ok(new
+        {
+            success = true,
+            data = new { message = "Email verificado com sucesso." },
+            meta = new { timestamp = DateTime.UtcNow }
+        });
+    }
+
+    /// <summary>
+    /// Reenvia o email de verificação
+    /// </summary>
+    [HttpPost("resend-verification")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResendVerification()
+    {
+        _logger.LogInformation("📧 Reenvio de verificação de email");
+
+        await _mediator.Send(new ResendVerificationCommand());
+
+        return Ok(new
+        {
+            success = true,
+            data = new { message = "Email de verificação reenviado." },
             meta = new { timestamp = DateTime.UtcNow }
         });
     }

@@ -8,6 +8,7 @@ using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Interfaces.Settings;
 using TokenValidationResult = CareerFlow.Application.Common.Interfaces.TokenValidationResult;
+using EmailTokenValidationResult = CareerFlow.Application.Common.Interfaces.EmailTokenValidationResult;
 
 namespace CareerFlow.Application.Services;
 
@@ -135,6 +136,109 @@ public class TokenService : ITokenService
         catch (Exception ex)
         {
             return Task.FromResult(new TokenValidationResult
+            {
+                IsValid = false,
+                Error = ex.Message
+            });
+        }
+    }
+
+    public string GenerateEmailVerificationToken(User user)
+    {
+        return GeneratePurposeToken(user, "email_verification", 48);
+    }
+
+    public string GeneratePasswordResetToken(User user)
+    {
+        return GeneratePurposeToken(user, "password_reset", 1);
+    }
+
+    private string GeneratePurposeToken(User user, string purpose, int expirationHours)
+    {
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("purpose", purpose)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(expirationHours),
+            Issuer = _jwtSettings.Issuer,
+            Audience = _jwtSettings.Audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(_secretKeyBytes),
+                SecurityAlgorithms.HmacSha512)
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    public Task<EmailTokenValidationResult> ValidatePurposeTokenAsync(string token, string purpose, CancellationToken cancellationToken = default)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+
+        try
+        {
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(_secretKeyBytes),
+                ValidateIssuer = true,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = _jwtSettings.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+
+            if (validatedToken is not JwtSecurityToken jwtToken)
+            {
+                return Task.FromResult(new EmailTokenValidationResult
+                {
+                    IsValid = false,
+                    Error = "Token inválido"
+                });
+            }
+
+            var tokenPurpose = principal.FindFirst("purpose")?.Value;
+            if (tokenPurpose != purpose)
+            {
+                return Task.FromResult(new EmailTokenValidationResult
+                {
+                    IsValid = false,
+                    Error = "Token inválido para esta operação"
+                });
+            }
+
+            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var email = principal.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+
+            return Task.FromResult(new EmailTokenValidationResult
+            {
+                IsValid = true,
+                UserId = userId != null ? Guid.Parse(userId) : null,
+                Email = email
+            });
+        }
+        catch (SecurityTokenExpiredException)
+        {
+            return Task.FromResult(new EmailTokenValidationResult
+            {
+                IsValid = false,
+                Error = "Token expirado"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new EmailTokenValidationResult
             {
                 IsValid = false,
                 Error = ex.Message

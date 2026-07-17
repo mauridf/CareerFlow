@@ -34,6 +34,9 @@ public static class ServiceCollectionExtensions
         services.Configure<PdfSettings>(
             configuration.GetSection(PdfSettings.SectionName));
 
+        services.Configure<EmailSettings>(
+            configuration.GetSection(EmailSettings.SectionName));
+
         return services;
     }
 

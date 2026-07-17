@@ -16,6 +16,7 @@ public class RegisterUserHandlerTests
     private readonly Mock<IPersonRepository> _personRepoMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
+    private readonly Mock<IEmailService> _emailServiceMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILogger<RegisterUserHandler>> _loggerMock;
     private readonly RegisterUserHandler _handler;
@@ -26,6 +27,7 @@ public class RegisterUserHandlerTests
         _personRepoMock = new Mock<IPersonRepository>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _tokenServiceMock = new Mock<ITokenService>();
+        _emailServiceMock = new Mock<IEmailService>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loggerMock = new Mock<ILogger<RegisterUserHandler>>();
 
@@ -34,6 +36,7 @@ public class RegisterUserHandlerTests
             _personRepoMock.Object,
             _passwordHasherMock.Object,
             _tokenServiceMock.Object,
+            _emailServiceMock.Object,
             _unitOfWorkMock.Object,
             _loggerMock.Object);
     }

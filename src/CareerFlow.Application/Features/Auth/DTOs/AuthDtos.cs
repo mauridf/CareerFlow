@@ -29,6 +29,9 @@ public record ChangePasswordRequest(
     string CurrentPassword,
     string NewPassword);
 
+public record VerifyEmailRequest(
+    string Token);
+
 // ============================================
 // Response DTOs
 // ============================================
