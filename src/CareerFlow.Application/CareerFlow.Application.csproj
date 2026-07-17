@@ -10,20 +10,11 @@
     <Folder Include="Features\Admin\Handlers\" />
     <Folder Include="Features\Admin\Queries\" />
     <Folder Include="Features\Auth\Queries\" />
-    <Folder Include="Features\Certificates\Commands\" />
-    <Folder Include="Features\Certificates\Handlers\" />
-    <Folder Include="Features\Certificates\Queries\" />
     <Folder Include="Features\Dashboard\Handlers\" />
     <Folder Include="Features\Dashboard\Queries\" />
-    <Folder Include="Features\Languages\Commands\" />
-    <Folder Include="Features\Languages\Handlers\" />
-    <Folder Include="Features\Languages\Queries\" />
     <Folder Include="Features\Resume\Commands\" />
     <Folder Include="Features\Resume\Handlers\" />
     <Folder Include="Features\Resume\Queries\" />
-    <Folder Include="Features\SocialNetworks\Commands\" />
-    <Folder Include="Features\SocialNetworks\Handlers\" />
-    <Folder Include="Features\SocialNetworks\Queries\" />
   </ItemGroup>
 
   <ItemGroup>

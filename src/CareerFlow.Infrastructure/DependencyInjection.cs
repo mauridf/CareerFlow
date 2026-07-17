@@ -64,6 +64,9 @@ public static class DependencyInjection
         services.AddScoped<ISkillRepository, SkillRepository>();
         services.AddScoped<IExperienceRepository, ExperienceRepository>();
         services.AddScoped<IEducationRepository, EducationRepository>();
+        services.AddScoped<ICertificateRepository, CertificateRepository>();
+        services.AddScoped<ILanguageRepository, LanguageRepository>();
+        services.AddScoped<ISocialNetworkRepository, SocialNetworkRepository>();
 
         // ============================================
         // Outbox Processor (Singleton - Timer interno)
