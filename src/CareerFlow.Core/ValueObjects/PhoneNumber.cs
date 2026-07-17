@@ -12,7 +12,7 @@ public sealed class PhoneNumber : ValueObject
     public string Value { get; }
 
     /// <summary>DDD (2 dígitos)</summary>
-    public string DDD => Value.Length >= 2 ? Value[..2] : string.Empty;
+    public string DDD => DigitsOnly.Length >= 2 ? DigitsOnly[..2] : string.Empty;
 
     /// <summary>Número sem DDD</summary>
     public string Number => Value.Length > 2 ? Value[2..] : string.Empty;

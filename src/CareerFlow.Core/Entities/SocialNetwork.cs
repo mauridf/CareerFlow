@@ -1,4 +1,5 @@
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Events;
 using CareerFlow.Core.ValueObjects;
 
 namespace CareerFlow.Core.Entities;
@@ -6,7 +7,7 @@ namespace CareerFlow.Core.Entities;
 /// <summary>
 /// Entidade que representa uma rede social associada ao perfil.
 /// </summary>
-public class SocialNetwork : Entity<Guid>
+public class SocialNetwork : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -25,7 +26,7 @@ public class SocialNetwork : Entity<Guid>
         // Valida a URL usando o Value Object
         var urlVO = new ValueObjects.Url(url);
 
-        return new SocialNetwork
+        var socialNetwork = new SocialNetwork
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -35,6 +36,10 @@ public class SocialNetwork : Entity<Guid>
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        socialNetwork.AddDomainEvent(new SocialNetworkCreatedEvent(socialNetwork.Id, personId, type));
+
+        return socialNetwork;
     }
 
     public void Update(SocialNetworkType type, string url, int displayOrder)
@@ -48,5 +53,6 @@ public class SocialNetwork : Entity<Guid>
         Url = urlVO.Value;
         DisplayOrder = displayOrder;
         MarkAsUpdated();
+        AddDomainEvent(new SocialNetworkUpdatedEvent(Id, PersonId));
     }
 }

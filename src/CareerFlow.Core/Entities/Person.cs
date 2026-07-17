@@ -122,6 +122,15 @@ public class Person : AggregateRoot<Guid>
         MarkAsUpdated();
     }
 
+    public void Share(string? shareMethod = "link")
+    {
+        if (!IsPublic)
+            IsPublic = true;
+
+        MarkAsUpdated();
+        AddDomainEvent(new ResumeSharedEvent(Id, UserId, shareMethod ?? "link"));
+    }
+
     public void SetResumeSlug(string slug)
     {
         if (string.IsNullOrWhiteSpace(slug))

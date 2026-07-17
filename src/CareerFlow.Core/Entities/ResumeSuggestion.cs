@@ -1,9 +1,11 @@
+using CareerFlow.Core.Events;
+
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Sugestão de melhoria para o currículo.
 /// </summary>
-public class ResumeSuggestion : Entity<Guid>
+public class ResumeSuggestion : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -24,7 +26,7 @@ public class ResumeSuggestion : Entity<Guid>
         string? description,
         string priority = "medium")
     {
-        return new ResumeSuggestion
+        var suggestion = new ResumeSuggestion
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -34,11 +36,16 @@ public class ResumeSuggestion : Entity<Guid>
             Priority = priority,
             CreatedAt = DateTime.UtcNow
         };
+
+        suggestion.AddDomainEvent(new ResumeSuggestionCreatedEvent(suggestion.Id, personId, category, title));
+
+        return suggestion;
     }
 
     public void MarkAsApplied()
     {
         IsApplied = true;
         AppliedAt = DateTime.UtcNow;
+        AddDomainEvent(new ResumeSuggestionAppliedEvent(Id, PersonId));
     }
 }

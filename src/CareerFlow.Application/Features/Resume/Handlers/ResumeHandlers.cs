@@ -205,7 +205,7 @@ public class ShareResumeHandler : IRequestHandler<ShareResumeCommand, string>
             _personRepo.Update(person);
         }
 
-        person.SetPublic(true);
+        person.Share();
 
         var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
         if (analytics != null)

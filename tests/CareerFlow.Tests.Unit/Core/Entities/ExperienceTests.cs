@@ -1,5 +1,6 @@
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Exceptions;
 using FluentAssertions;
 using Xunit;
 
@@ -16,7 +17,7 @@ public class ExperienceTests
         var exp = Experience.Create(
             _personId, "TechCorp", "Developer",
             new DateTime(2020, 1, 1), null,
-            "Desenvolvimento de APIs REST com .NET Core");
+            "Desenvolvimento de APIs REST com .NET Core, microsserviços, Docker e muito mais habilidades");
 
         // Assert
         exp.CompanyName.Should().Be("TechCorp");
@@ -34,7 +35,7 @@ public class ExperienceTests
             DateTime.Now, null, "Curta");
 
         // Assert
-        action.Should().Throw<ArgumentException>();
+        action.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public class ExperienceTests
         var exp = Experience.Create(
             _personId, "TechCorp", "Developer",
             new DateTime(2020, 1, 1), new DateTime(2022, 12, 31),
-            "Desenvolvimento de APIs REST com .NET Core e microsserviços");
+            "Desenvolvimento de APIs REST com .NET Core, microsserviços, Docker e Kubernetes");
 
         // Act
         var duration = exp.GetFormattedDuration();
@@ -56,16 +57,14 @@ public class ExperienceTests
     [Fact]
     public void AddSkill_ShouldAddToSkillsUsed()
     {
-        // Arrange
         var exp = Experience.Create(
             _personId, "TechCorp", "Developer",
-            DateTime.Now, null, "Descrição válida com mais de cinquenta caracteres para teste");
+            DateTime.Now, null,
+            "Descrição válida com mais de cinquenta caracteres valida para teste de adicao");
         var skillId = Guid.NewGuid();
 
-        // Act
         exp.AddSkill(skillId);
 
-        // Assert
         exp.SkillsUsed.Should().Contain(skillId);
     }
 }

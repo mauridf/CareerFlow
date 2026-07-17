@@ -1,11 +1,12 @@
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Events;
 
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Entidade que representa uma habilidade do usuário.
 /// </summary>
-public class Skill : Entity<Guid>
+public class Skill : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -32,7 +33,7 @@ public class Skill : Entity<Guid>
         if (name.Length > 100)
             throw new DomainException("Nome da habilidade deve ter no máximo 100 caracteres");
 
-        return new Skill
+        var skill = new Skill
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -44,6 +45,10 @@ public class Skill : Entity<Guid>
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        skill.AddDomainEvent(new SkillCreatedEvent(skill.Id, personId, name.Trim()));
+
+        return skill;
     }
 
     public void Update(string name, SkillCategory category, ProficiencyLevel level, bool isPrimary, int displayOrder)
@@ -60,6 +65,7 @@ public class Skill : Entity<Guid>
         IsPrimary = isPrimary;
         DisplayOrder = displayOrder;
         MarkAsUpdated();
+        AddDomainEvent(new SkillUpdatedEvent(Id, PersonId));
     }
 
     public void TogglePrimary()

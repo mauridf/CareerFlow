@@ -47,7 +47,7 @@ public class RegisterUserHandlerTests
         // Arrange
         var command = new RegisterUserCommand("João", "joao@email.com", "Senha@123");
 
-        _userRepoMock.Setup(r => r.EmailExistsAsync(command.Email, It.IsAny<CancellationToken>()))
+        _userRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _passwordHasherMock.Setup(p => p.HashPassword(command.Password))
             .Returns("hashed_password");
@@ -81,7 +81,7 @@ public class RegisterUserHandlerTests
         // Arrange
         var command = new RegisterUserCommand("João", "existe@email.com", "Senha@123");
 
-        _userRepoMock.Setup(r => r.EmailExistsAsync(command.Email, It.IsAny<CancellationToken>()))
+        _userRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act

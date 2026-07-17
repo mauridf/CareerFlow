@@ -1,9 +1,11 @@
+using CareerFlow.Core.Events;
+
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Entidade que representa certificados e certificações.
 /// </summary>
-public class Certificate : Entity<Guid>
+public class Certificate : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -41,7 +43,7 @@ public class Certificate : Entity<Guid>
         if (expirationDate.HasValue && issueDate > expirationDate.Value)
             throw new ArgumentException("Data de emissão deve ser anterior à data de expiração");
 
-        return new Certificate
+        var certificate = new Certificate
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -56,6 +58,10 @@ public class Certificate : Entity<Guid>
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        certificate.AddDomainEvent(new CertificateCreatedEvent(certificate.Id, personId, title.Trim()));
+
+        return certificate;
     }
 
     public void Update(
@@ -73,5 +79,6 @@ public class Certificate : Entity<Guid>
         CertificateId = certificateId;
         CredentialUrl = credentialUrl;
         MarkAsUpdated();
+        AddDomainEvent(new CertificateUpdatedEvent(Id, PersonId));
     }
 }

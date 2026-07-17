@@ -43,8 +43,8 @@ public class LoginHandlerTests
         user.VerifyEmail(); // Ativa a conta
         var command = new LoginCommand("joao@email.com", "Senha@123");
 
-        _userRepoMock.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _userRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User> { user });
         _passwordHasherMock.Setup(p => p.VerifyPassword(command.Password, user.PasswordHash))
             .Returns(true);
         _tokenServiceMock.Setup(t => t.GenerateTokensAsync(user, It.IsAny<CancellationToken>()))
@@ -67,8 +67,8 @@ public class LoginHandlerTests
         user.VerifyEmail();
         var command = new LoginCommand("joao@email.com", "WrongPassword");
 
-        _userRepoMock.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _userRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User> { user });
         _passwordHasherMock.Setup(p => p.VerifyPassword(command.Password, user.PasswordHash))
             .Returns(false);
 
@@ -85,8 +85,8 @@ public class LoginHandlerTests
         // Arrange
         var command = new LoginCommand("naoexiste@email.com", "Senha@123");
 
-        _userRepoMock.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((User?)null);
+        _userRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User>());
 
         // Act
         var action = () => _handler.Handle(command, CancellationToken.None);

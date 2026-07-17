@@ -1,5 +1,6 @@
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Exceptions;
 using FluentAssertions;
 using Xunit;
 
@@ -23,15 +24,17 @@ public class UserTests
         user.DomainEvents.Should().HaveCount(1); // UserRegisteredEvent
     }
 
-    [Theory]
-    [InlineData("", "email@teste.com", "hash")]
-    [InlineData("Nome", "", "hash")]
-    public void Create_InvalidData_ShouldThrowException(string name, string email, string passwordHash)
+    [Fact]
+    public void Create_EmptyName_ShouldThrowDomainException()
     {
-        // Act
-        var action = () => User.Create(name, email, passwordHash);
+        var action = () => User.Create("", "email@teste.com", "hash");
+        action.Should().Throw<DomainException>();
+    }
 
-        // Assert
+    [Fact]
+    public void Create_EmptyEmail_ShouldThrowException()
+    {
+        var action = () => User.Create("Nome", "", "hash");
         action.Should().Throw<ArgumentException>();
     }
 

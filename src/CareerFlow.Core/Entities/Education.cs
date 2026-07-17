@@ -1,11 +1,12 @@
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Events;
 
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Entidade que representa formação acadêmica.
 /// </summary>
-public class Education : Entity<Guid>
+public class Education : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -49,7 +50,7 @@ public class Education : Entity<Guid>
         var isCurrent = !endDate.HasValue;
         var educationStatus = status ?? (isCurrent ? EducationStatus.InProgress : EducationStatus.Completed);
 
-        return new Education
+        var education = new Education
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -67,6 +68,10 @@ public class Education : Entity<Guid>
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        education.AddDomainEvent(new EducationCreatedEvent(education.Id, personId, institution.Trim(), course.Trim(), level));
+
+        return education;
     }
 
     public void Update(
@@ -91,5 +96,6 @@ public class Education : Entity<Guid>
         Grade = grade;
         ThesisTitle = thesisTitle?.Trim();
         MarkAsUpdated();
+        AddDomainEvent(new EducationUpdatedEvent(Id, PersonId));
     }
 }

@@ -1,11 +1,12 @@
 using CareerFlow.Core.Enums;
+using CareerFlow.Core.Events;
 
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Entidade que representa idiomas do usuário.
 /// </summary>
-public class Language : Entity<Guid>
+public class Language : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -31,7 +32,7 @@ public class Language : Entity<Guid>
         if (string.IsNullOrWhiteSpace(languageName))
             throw new ArgumentException("Nome do idioma é obrigatório", nameof(languageName));
 
-        return new Language
+        var language = new Language
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -42,6 +43,10 @@ public class Language : Entity<Guid>
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        language.AddDomainEvent(new LanguageCreatedEvent(language.Id, personId, languageName.Trim(), level));
+
+        return language;
     }
 
     public void Update(string languageName, LanguageLevel level, bool isNative)
@@ -50,5 +55,6 @@ public class Language : Entity<Guid>
         ProficiencyLevel = level;
         IsNative = isNative;
         MarkAsUpdated();
+        AddDomainEvent(new LanguageUpdatedEvent(Id, PersonId));
     }
 }

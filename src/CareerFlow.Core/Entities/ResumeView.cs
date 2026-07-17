@@ -1,11 +1,12 @@
 using System.Net;
+using CareerFlow.Core.Events;
 
 namespace CareerFlow.Core.Entities;
 
 /// <summary>
 /// Registro de visualização do currículo público.
 /// </summary>
-public class ResumeView : Entity<Guid>
+public class ResumeView : AggregateRoot<Guid>
 {
     public Guid PersonId { get; private set; }
     public Person? Person { get; private set; }
@@ -28,7 +29,7 @@ public class ResumeView : Entity<Guid>
         string? referrer = null,
         string? source = "direct")
     {
-        return new ResumeView
+        var view = new ResumeView
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
@@ -38,6 +39,14 @@ public class ResumeView : Entity<Guid>
             Source = source,
             CreatedAt = DateTime.UtcNow
         };
+
+        view.AddDomainEvent(new ResumeViewedEvent(
+            personId,
+            ipAddress?.ToString(),
+            userAgent,
+            source));
+
+        return view;
     }
 
     public void MarkPdfDownloaded()
