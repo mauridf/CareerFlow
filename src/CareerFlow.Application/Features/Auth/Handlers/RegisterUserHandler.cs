@@ -5,7 +5,6 @@ using CareerFlow.Application.Features.Auth.Commands;
 using CareerFlow.Application.Features.Auth.DTOs;
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Exceptions;
-using CareerFlow.Core.Entities;
 using CareerFlow.Core.Interfaces;
 
 namespace CareerFlow.Application.Features.Auth.Handlers;

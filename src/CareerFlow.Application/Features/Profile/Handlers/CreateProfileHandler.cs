@@ -5,7 +5,6 @@ using CareerFlow.Application.Features.Profile.DTOs;
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Exceptions;
 using CareerFlow.Core.Interfaces;
-using CareerFlow.Core.Interfaces;
 
 namespace CareerFlow.Application.Features.Profile.Handlers;
 

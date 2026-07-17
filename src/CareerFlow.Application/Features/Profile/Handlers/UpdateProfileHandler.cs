@@ -3,7 +3,6 @@ using CareerFlow.Application.Features.Profile.DTOs;
 using CareerFlow.Core.Entities;
 using CareerFlow.Core.Exceptions;
 using CareerFlow.Core.Interfaces;
-using CareerFlow.Core.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

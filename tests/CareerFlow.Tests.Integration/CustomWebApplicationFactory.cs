@@ -44,5 +44,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => Task.CompletedTask;
+    Task IAsyncLifetime.DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
