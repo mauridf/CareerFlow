@@ -134,3 +134,67 @@ public class DeleteEducationHandler : IRequestHandler<DeleteEducationCommand>
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
+
+public class UpdateEducationHandler : IRequestHandler<UpdateEducationCommand, EducationResponse>
+{
+    private readonly IEducationRepository _educationRepository;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UpdateEducationHandler> _logger;
+
+    public UpdateEducationHandler(
+        IEducationRepository educationRepository,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork,
+        ILogger<UpdateEducationHandler> logger)
+    {
+        _educationRepository = educationRepository;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<EducationResponse> Handle(UpdateEducationCommand command, CancellationToken cancellationToken)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(cancellationToken);
+
+        var education = await _educationRepository.GetByIdAsync(command.Id, cancellationToken)
+            ?? throw new NotFoundException("Formação", command.Id);
+
+        if (education.PersonId != personId)
+            throw new UnauthorizedException("Esta formação não pertence ao seu perfil");
+
+        education.Update(
+            command.Institution,
+            command.Course,
+            command.EducationLevel,
+            command.StartDate,
+            command.EndDate,
+            command.Status,
+            command.Description,
+            command.Grade,
+            command.ThesisTitle);
+
+        _educationRepository.Update(education);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("✅ Formação atualizada: {Id}", education.Id);
+
+        return new EducationResponse
+        {
+            Id = education.Id,
+            Institution = education.Institution,
+            Course = education.Course,
+            EducationLevel = education.EducationLevel.GetDisplayName(),
+            Status = education.Status.GetDisplayName(),
+            StartDate = education.StartDate,
+            EndDate = education.EndDate,
+            IsCurrent = education.IsCurrent,
+            Description = education.Description,
+            Grade = education.Grade,
+            ThesisTitle = education.ThesisTitle,
+            DisplayOrder = education.DisplayOrder,
+            CreatedAt = education.CreatedAt
+        };
+    }
+}

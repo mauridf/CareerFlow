@@ -86,3 +86,36 @@ public class DeleteSocialNetworkHandler : IRequestHandler<DeleteSocialNetworkCom
         await _unitOfWork.SaveChangesAsync(ct);
     }
 }
+
+public class UpdateSocialNetworkHandler : IRequestHandler<UpdateSocialNetworkCommand, SocialNetworkResponse>
+{
+    private readonly ISocialNetworkRepository _repo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateSocialNetworkHandler(ISocialNetworkRepository repo, ICurrentUserService currentUser, IUnitOfWork unitOfWork)
+    {
+        _repo = repo; _currentUser = currentUser; _unitOfWork = unitOfWork;
+    }
+
+    public async Task<SocialNetworkResponse> Handle(UpdateSocialNetworkCommand cmd, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var sn = await _repo.GetByIdAsync(cmd.Id, ct) ?? throw new NotFoundException("Rede social", cmd.Id);
+        if (sn.PersonId != personId) throw new UnauthorizedException();
+
+        sn.Update(cmd.NetworkType, cmd.Url, cmd.DisplayOrder);
+
+        _repo.Update(sn);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return new SocialNetworkResponse
+        {
+            Id = sn.Id,
+            NetworkType = sn.NetworkType.GetDisplayName(),
+            Url = sn.Url,
+            DisplayOrder = sn.DisplayOrder,
+            CreatedAt = sn.CreatedAt
+        };
+    }
+}

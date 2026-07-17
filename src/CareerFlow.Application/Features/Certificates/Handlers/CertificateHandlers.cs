@@ -102,3 +102,42 @@ public class DeleteCertificateHandler : IRequestHandler<DeleteCertificateCommand
         await _unitOfWork.SaveChangesAsync(ct);
     }
 }
+
+public class UpdateCertificateHandler : IRequestHandler<UpdateCertificateCommand, CertificateResponse>
+{
+    private readonly ICertificateRepository _repo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateCertificateHandler(ICertificateRepository repo, ICurrentUserService currentUser, IUnitOfWork unitOfWork)
+    {
+        _repo = repo; _currentUser = currentUser; _unitOfWork = unitOfWork;
+    }
+
+    public async Task<CertificateResponse> Handle(UpdateCertificateCommand cmd, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var cert = await _repo.GetByIdAsync(cmd.Id, ct) ?? throw new NotFoundException("Certificado", cmd.Id);
+        if (cert.PersonId != personId) throw new UnauthorizedException();
+
+        cert.Update(cmd.Title, cmd.Issuer, cmd.IssueDate, cmd.ExpirationDate, cmd.CertificateId, cmd.CredentialUrl);
+
+        _repo.Update(cert);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return new CertificateResponse
+        {
+            Id = cert.Id,
+            Title = cert.Title,
+            Issuer = cert.Issuer,
+            IssueDate = cert.IssueDate,
+            ExpirationDate = cert.ExpirationDate,
+            CertificateId = cert.CertificateId,
+            CredentialId = cert.CredentialId,
+            CredentialUrl = cert.CredentialUrl,
+            IsActive = cert.IsActive,
+            DisplayOrder = cert.DisplayOrder,
+            CreatedAt = cert.CreatedAt
+        };
+    }
+}

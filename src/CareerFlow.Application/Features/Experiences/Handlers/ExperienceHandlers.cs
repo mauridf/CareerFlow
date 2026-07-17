@@ -152,3 +152,112 @@ public class DeleteExperienceHandler : IRequestHandler<DeleteExperienceCommand>
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
+
+public class UpdateExperienceHandler : IRequestHandler<UpdateExperienceCommand, ExperienceResponse>
+{
+    private readonly IExperienceRepository _experienceRepository;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UpdateExperienceHandler> _logger;
+
+    public UpdateExperienceHandler(
+        IExperienceRepository experienceRepository,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork,
+        ILogger<UpdateExperienceHandler> logger)
+    {
+        _experienceRepository = experienceRepository;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<ExperienceResponse> Handle(UpdateExperienceCommand command, CancellationToken cancellationToken)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(cancellationToken);
+
+        var experience = await _experienceRepository.GetByIdAsync(command.Id, cancellationToken)
+            ?? throw new NotFoundException("Experiência", command.Id);
+
+        if (experience.PersonId != personId)
+            throw new UnauthorizedException("Esta experiência não pertence ao seu perfil");
+
+        experience.Update(
+            command.CompanyName,
+            command.Position,
+            command.StartDate,
+            command.EndDate,
+            command.Description,
+            command.EmploymentType,
+            command.City,
+            command.State);
+
+        _experienceRepository.Update(experience);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("✅ Experiência atualizada: {Id}", experience.Id);
+
+        return new ExperienceResponse
+        {
+            Id = experience.Id,
+            CompanyName = experience.CompanyName,
+            Position = experience.Position,
+            StartDate = experience.StartDate,
+            EndDate = experience.EndDate,
+            IsCurrent = experience.IsCurrent,
+            Description = experience.Description,
+            SkillsUsed = experience.SkillsUsed,
+            City = experience.City,
+            State = experience.State,
+            Country = experience.Country,
+            EmploymentType = experience.EmploymentType?.GetDisplayName(),
+            DurationFormatted = experience.GetFormattedDuration(),
+            DisplayOrder = experience.DisplayOrder,
+            CreatedAt = experience.CreatedAt
+        };
+    }
+}
+
+public class GetExperienceDetailHandler : IRequestHandler<GetExperienceDetailQuery, ExperienceResponse>
+{
+    private readonly IExperienceRepository _experienceRepository;
+    private readonly ICurrentUserService _currentUser;
+
+    public GetExperienceDetailHandler(
+        IExperienceRepository experienceRepository,
+        ICurrentUserService currentUser)
+    {
+        _experienceRepository = experienceRepository;
+        _currentUser = currentUser;
+    }
+
+    public async Task<ExperienceResponse> Handle(GetExperienceDetailQuery request, CancellationToken cancellationToken)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(cancellationToken);
+
+        var experience = await _experienceRepository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Experiência", request.Id);
+
+        if (experience.PersonId != personId)
+            throw new UnauthorizedException("Esta experiência não pertence ao seu perfil");
+
+        return new ExperienceResponse
+        {
+            Id = experience.Id,
+            CompanyName = experience.CompanyName,
+            Position = experience.Position,
+            StartDate = experience.StartDate,
+            EndDate = experience.EndDate,
+            IsCurrent = experience.IsCurrent,
+            Description = experience.Description,
+            SkillsUsed = experience.SkillsUsed,
+            City = experience.City,
+            State = experience.State,
+            Country = experience.Country,
+            EmploymentType = experience.EmploymentType?.GetDisplayName(),
+            DurationFormatted = experience.GetFormattedDuration(),
+            DisplayOrder = experience.DisplayOrder,
+            CreatedAt = experience.CreatedAt
+        };
+    }
+}

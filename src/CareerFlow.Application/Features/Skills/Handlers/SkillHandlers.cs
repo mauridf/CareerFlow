@@ -194,3 +194,38 @@ public class GetSkillCategoriesHandler : IRequestHandler<GetSkillCategoriesQuery
         return Task.FromResult(categories);
     }
 }
+
+public class ReorderSkillsHandler : IRequestHandler<ReorderSkillsCommand>
+{
+    private readonly ISkillRepository _skillRepository;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public ReorderSkillsHandler(
+        ISkillRepository skillRepository,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork)
+    {
+        _skillRepository = skillRepository;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task Handle(ReorderSkillsCommand command, CancellationToken cancellationToken)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(cancellationToken);
+        var skills = await _skillRepository.GetByPersonIdAsync(personId, cancellationToken);
+        var skillMap = skills.ToDictionary(s => s.Id);
+
+        foreach (var item in command.Skills)
+        {
+            if (skillMap.TryGetValue(item.Id, out var skill))
+            {
+                skill.Update(skill.Name, skill.Category, skill.ProficiencyLevel, skill.IsPrimary, item.DisplayOrder);
+                _skillRepository.Update(skill);
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+}

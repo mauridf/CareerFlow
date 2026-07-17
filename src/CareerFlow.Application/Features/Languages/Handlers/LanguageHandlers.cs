@@ -92,3 +92,38 @@ public class DeleteLanguageHandler : IRequestHandler<DeleteLanguageCommand>
         await _unitOfWork.SaveChangesAsync(ct);
     }
 }
+
+public class UpdateLanguageHandler : IRequestHandler<UpdateLanguageCommand, LanguageResponse>
+{
+    private readonly ILanguageRepository _repo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UpdateLanguageHandler(ILanguageRepository repo, ICurrentUserService currentUser, IUnitOfWork unitOfWork)
+    {
+        _repo = repo; _currentUser = currentUser; _unitOfWork = unitOfWork;
+    }
+
+    public async Task<LanguageResponse> Handle(UpdateLanguageCommand cmd, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var lang = await _repo.GetByIdAsync(cmd.Id, ct) ?? throw new NotFoundException("Idioma", cmd.Id);
+        if (lang.PersonId != personId) throw new UnauthorizedException();
+
+        lang.Update(cmd.LanguageName, cmd.ProficiencyLevel, cmd.IsNative);
+
+        _repo.Update(lang);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return new LanguageResponse
+        {
+            Id = lang.Id,
+            LanguageName = lang.LanguageName,
+            ProficiencyLevel = lang.ProficiencyLevel.GetDisplayName(),
+            ProficiencyScore = lang.ProficiencyLevel.GetScore(),
+            IsNative = lang.IsNative,
+            DisplayOrder = lang.DisplayOrder,
+            CreatedAt = lang.CreatedAt
+        };
+    }
+}

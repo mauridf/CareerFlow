@@ -213,3 +213,51 @@ public class AdminDeleteUserHandler : IRequestHandler<AdminDeleteUserCommand>
         await _unitOfWork.SaveChangesAsync(ct);
     }
 }
+
+public class AdminManagePremiumHandler : IRequestHandler<AdminManagePremiumCommand, AdminUserDetailResponse>
+{
+    private readonly IUserRepository _userRepo;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<AdminManagePremiumHandler> _logger;
+
+    public AdminManagePremiumHandler(
+        IUserRepository userRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<AdminManagePremiumHandler> logger)
+    {
+        _userRepo = userRepo; _unitOfWork = unitOfWork; _logger = logger;
+    }
+
+    public async Task<AdminUserDetailResponse> Handle(AdminManagePremiumCommand cmd, CancellationToken ct)
+    {
+        var user = await _userRepo.GetByIdAsync(cmd.Id, ct)
+            ?? throw new NotFoundException("Usuário", cmd.Id);
+
+        if (cmd.Activate)
+        {
+            var until = cmd.Until ?? DateTime.UtcNow.AddYears(1);
+            user.ActivatePremium(until);
+            _logger.LogInformation("✅ Premium ativado para usuário {UserId} até {Until}", user.Id, until);
+        }
+        else
+        {
+            user.DeactivatePremium();
+            _logger.LogInformation("✅ Premium desativado para usuário {UserId}", user.Id);
+        }
+
+        _userRepo.Update(user);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return new AdminUserDetailResponse
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role.GetDisplayName(),
+            IsActive = user.IsActive,
+            IsPremium = user.IsPremium,
+            PremiumUntil = user.PremiumUntil,
+            EmailVerified = user.IsEmailVerified()
+        };
+    }
+}

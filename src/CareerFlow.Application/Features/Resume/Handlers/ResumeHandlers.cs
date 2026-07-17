@@ -257,3 +257,189 @@ public class PublishResumeHandler : IRequestHandler<PublishResumeCommand>
         await _unitOfWork.SaveChangesAsync(ct);
     }
 }
+
+public class GenerateResumeHandler : IRequestHandler<GenerateResumeCommand, byte[]>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPdfGeneratorService _pdfGenerator;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly ILogger<GenerateResumeHandler> _logger;
+
+    public GenerateResumeHandler(
+        IPersonRepository personRepo,
+        ICurrentUserService currentUser,
+        IPdfGeneratorService pdfGenerator,
+        IResumeAnalyticsRepository analyticsRepo,
+        ILogger<GenerateResumeHandler> logger)
+    {
+        _personRepo = personRepo;
+        _currentUser = currentUser;
+        _pdfGenerator = pdfGenerator;
+        _analyticsRepo = analyticsRepo;
+        _logger = logger;
+    }
+
+    public async Task<byte[]> Handle(GenerateResumeCommand req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var person = await _personRepo.GetFullProfileAsync(personId, ct)
+            ?? throw new NotFoundException("Perfil");
+
+        if (!person.CanGenerateResume())
+            throw new DomainException("Perfil não atinge os requisitos mínimos para gerar currículo (60% completo)");
+
+        var resumeData = ResumeMapper.MapToResumeData(person);
+        var pdf = await _pdfGenerator.GenerateResumePdfAsync(resumeData, ct);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
+        if (analytics != null)
+        {
+            analytics.IncrementPdfDownload();
+            _analyticsRepo.Update(analytics);
+        }
+
+        _logger.LogInformation("✅ PDF gerado para PersonId={PersonId}", personId);
+
+        return pdf;
+    }
+}
+
+public class GenerateAtsResumeHandler : IRequestHandler<GenerateAtsResumeCommand, byte[]>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IPdfGeneratorService _pdfGenerator;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly ILogger<GenerateAtsResumeHandler> _logger;
+
+    public GenerateAtsResumeHandler(
+        IPersonRepository personRepo,
+        ICurrentUserService currentUser,
+        IPdfGeneratorService pdfGenerator,
+        IResumeAnalyticsRepository analyticsRepo,
+        ILogger<GenerateAtsResumeHandler> logger)
+    {
+        _personRepo = personRepo;
+        _currentUser = currentUser;
+        _pdfGenerator = pdfGenerator;
+        _analyticsRepo = analyticsRepo;
+        _logger = logger;
+    }
+
+    public async Task<byte[]> Handle(GenerateAtsResumeCommand req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var person = await _personRepo.GetFullProfileAsync(personId, ct)
+            ?? throw new NotFoundException("Perfil");
+
+        if (!person.CanGenerateResume())
+            throw new DomainException("Perfil não atinge os requisitos mínimos para gerar currículo (60% completo)");
+
+        var resumeData = ResumeMapper.MapToResumeData(person);
+        var pdf = await _pdfGenerator.GenerateAtsResumePdfAsync(resumeData, ct);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
+        if (analytics != null)
+        {
+            analytics.IncrementPdfDownload();
+            _analyticsRepo.Update(analytics);
+        }
+
+        _logger.LogInformation("✅ PDF ATS gerado para PersonId={PersonId}", personId);
+
+        return pdf;
+    }
+}
+
+public class AnalyzeResumeHandler : IRequestHandler<AnalyzeResumeCommand, ResumeAnalyticsResponse>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly IResumeViewRepository _viewRepo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly ILogger<AnalyzeResumeHandler> _logger;
+
+    public AnalyzeResumeHandler(
+        IPersonRepository personRepo,
+        IResumeAnalyticsRepository analyticsRepo,
+        IResumeViewRepository viewRepo,
+        ICurrentUserService currentUser,
+        ILogger<AnalyzeResumeHandler> logger)
+    {
+        _personRepo = personRepo;
+        _analyticsRepo = analyticsRepo;
+        _viewRepo = viewRepo;
+        _currentUser = currentUser;
+        _logger = logger;
+    }
+
+    public async Task<ResumeAnalyticsResponse> Handle(AnalyzeResumeCommand req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var person = await _personRepo.GetByIdAsync(personId, ct);
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
+
+        if (analytics == null)
+            return new ResumeAnalyticsResponse();
+
+        var totalViews = await _viewRepo.CountByPersonIdAsync(personId, ct);
+        var uniqueViews = await _viewRepo.CountUniqueByPersonIdAsync(personId, ct);
+        var pdfDownloads = await _viewRepo.CountPdfDownloadsAsync(personId, ct);
+
+        _logger.LogInformation("✅ Análise do currículo concluída para PersonId={PersonId}", personId);
+
+        return new ResumeAnalyticsResponse
+        {
+            TotalViews = totalViews,
+            UniqueViews = uniqueViews,
+            PdfDownloads = pdfDownloads,
+            SharesCount = analytics.SharesCount,
+            AtsScore = analytics.AtsScore,
+            AtsCompatibility = analytics.AtsCompatibility,
+            AtsIssues = analytics.AtsIssues,
+            AtsSuggestions = analytics.AtsSuggestions,
+            LastViewedAt = analytics.LastViewedAt,
+            Status = analytics.Status.GetDisplayName(),
+            CompletionPercentage = person?.CalculateCompletionPercentage() ?? 0
+        };
+    }
+}
+
+public class UnpublishResumeHandler : IRequestHandler<UnpublishResumeCommand>
+{
+    private readonly IPersonRepository _personRepo;
+    private readonly IResumeAnalyticsRepository _analyticsRepo;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public UnpublishResumeHandler(
+        IPersonRepository personRepo,
+        IResumeAnalyticsRepository analyticsRepo,
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork)
+    {
+        _personRepo = personRepo;
+        _analyticsRepo = analyticsRepo;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task Handle(UnpublishResumeCommand req, CancellationToken ct)
+    {
+        var personId = await _currentUser.GetPersonIdAsync(ct);
+        var person = await _personRepo.GetByIdAsync(personId, ct)
+            ?? throw new NotFoundException("Perfil");
+
+        person.SetPublic(false);
+
+        var analytics = await _analyticsRepo.GetByPersonIdAsync(personId, ct);
+        if (analytics != null)
+        {
+            analytics.Unpublish();
+            _analyticsRepo.Update(analytics);
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+}
