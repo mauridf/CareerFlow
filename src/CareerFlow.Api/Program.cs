@@ -336,18 +336,25 @@ try
 
     app.UseRateLimiter();
 
-    // 4. Middlewares customizados (serão adicionados nos próximos passos)
-    // app.UseMiddleware<GlobalExceptionMiddleware>();
+    // 4. Arquivos estáticos (uploads) - antes do roteamento para servir sem auth
+    app.UseStaticFiles(); // wwwroot padrão (se houver)
+
+    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+    if (Directory.Exists(uploadsPath))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+            RequestPath = "/uploads"
+        });
+    }
 
     // 5. Roteamento
     app.UseRouting();
 
-    // 6. Authentication e Authorization (serão adicionados no passo de Auth)
+    // 6. Authentication e Authorization
     app.UseAuthentication();
     app.UseAuthorization();
-
-    // Servir arquivos estáticos (uploads)
-    app.UseStaticFiles();
 
     // 7. Endpoints
     app.MapControllers();
