@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using CareerFlow.Application.Features.Dashboard.DTOs;
 using CareerFlow.Application.Features.Dashboard.Queries;
+using CareerFlow.Core.Entities;
 using CareerFlow.Core.Enums;
 using CareerFlow.Core.Interfaces;
 using CareerFlow.Core.Specifications;
@@ -183,6 +184,76 @@ public class GetViewsChartHandler : IRequestHandler<GetViewsChartQuery, ViewsCha
             .ToList();
 
         return new ViewsChartResponse { DataPoints = dataPoints };
+    }
+}
+
+public class GetRecentActivityHandler : IRequestHandler<GetRecentActivityQuery, IReadOnlyList<ActivityResponse>>
+{
+    private readonly IRepository<ActivityLog> _activityRepo;
+    private readonly ICurrentUserService _currentUser;
+
+    private static readonly Dictionary<string, string> ActionDescriptions = new()
+    {
+        ["created"] = "adicionou",
+        ["updated"] = "atualizou",
+        ["deleted"] = "removeu",
+    };
+
+    private static readonly Dictionary<string, string> EntityLabels = new()
+    {
+        ["Experience"] = "experiência",
+        ["Education"] = "formação",
+        ["Skill"] = "habilidade",
+        ["Certificate"] = "certificado",
+        ["Language"] = "idioma",
+        ["SocialNetwork"] = "rede social",
+        ["ResumeSuggestion"] = "sugestão",
+        ["Profile"] = "perfil",
+        ["User"] = "usuário",
+    };
+
+    public GetRecentActivityHandler(
+        IRepository<ActivityLog> activityRepo,
+        ICurrentUserService currentUser)
+    {
+        _activityRepo = activityRepo;
+        _currentUser = currentUser;
+    }
+
+    public async Task<IReadOnlyList<ActivityResponse>> Handle(GetRecentActivityQuery request, CancellationToken ct)
+    {
+        var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException("Usuário não autenticado");
+        var logs = await _activityRepo.FindAsync(
+            a => a.UserId == userId,
+            a => a.CreatedAt,
+            descending: true,
+            cancellationToken: ct);
+
+        return logs
+            .Take(request.Limit)
+            .Select(log => new ActivityResponse
+            {
+                Action = log.Action,
+                EntityType = log.EntityType,
+                CreatedAt = log.CreatedAt,
+                Description = FormatDescription(log.Action, log.EntityType),
+            })
+            .ToList();
+    }
+
+    private static string FormatDescription(string action, string? entityType)
+    {
+        var actionWord = ActionDescriptions.GetValueOrDefault(action, action);
+        var entityLabel = entityType is not null
+            ? EntityLabels.GetValueOrDefault(entityType, entityType.ToLower())
+            : "registro";
+        return $"Você {actionWord} {GetArticle(entityLabel)} {entityLabel}";
+    }
+
+    private static string GetArticle(string word)
+    {
+        var feminine = new[] { "experiência", "formação", "habilidade", "rede social", "sugestão" };
+        return feminine.Contains(word) ? "uma" : "um";
     }
 }
 
