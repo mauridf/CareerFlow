@@ -88,7 +88,8 @@ public class Experience : AggregateRoot<Guid>
         string? description,
         EmploymentType? employmentType = null,
         string? city = null,
-        string? state = null)
+        string? state = null,
+        List<Guid>? skillsUsed = null)
     {
         if (string.IsNullOrWhiteSpace(companyName))
             throw new DomainException("Nome da empresa é obrigatório");
@@ -107,6 +108,9 @@ public class Experience : AggregateRoot<Guid>
         EmploymentType = employmentType;
         City = city?.Trim();
         State = state?.Trim()?.ToUpper();
+
+        if (skillsUsed != null)
+            SkillsUsed = skillsUsed;
 
         MarkAsUpdated();
         AddDomainEvent(new ExperienceUpdatedEvent(Id));

@@ -207,4 +207,29 @@ public class Person : AggregateRoot<Guid>
             && Educations.Any()
             && Skills.Any();
     }
+
+    /// <summary>
+    /// Retorna lista de requisitos pendentes para publicação do currículo
+    /// </summary>
+    public List<string> GetMissingResumeRequirements()
+    {
+        var missing = new List<string>();
+
+        if (CalculateCompletionPercentage() < 60)
+            missing.Add("completude do perfil abaixo de 60%");
+        if (string.IsNullOrWhiteSpace(ProfessionalSummary))
+            missing.Add("Resumo Profissional");
+        if (string.IsNullOrWhiteSpace(City))
+            missing.Add("Cidade");
+        if (string.IsNullOrWhiteSpace(State))
+            missing.Add("Estado");
+        if (!Experiences.Any())
+            missing.Add("ao menos uma Experiência");
+        if (!Educations.Any())
+            missing.Add("ao menos uma Formação");
+        if (!Skills.Any())
+            missing.Add("ao menos uma Habilidade");
+
+        return missing;
+    }
 }

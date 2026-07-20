@@ -20,6 +20,7 @@ public record UpdateExperienceRequest(
     DateTime StartDate,
     DateTime? EndDate = null,
     string? Description = null,
+    List<Guid>? SkillsUsed = null,
     string? City = null,
     string? State = null,
     EmploymentType? EmploymentType = null);

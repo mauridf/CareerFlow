@@ -190,7 +190,8 @@ public class UpdateExperienceHandler : IRequestHandler<UpdateExperienceCommand, 
             command.Description,
             command.EmploymentType,
             command.City,
-            command.State);
+            command.State,
+            command.SkillsUsed);
 
         _experienceRepository.Update(experience);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

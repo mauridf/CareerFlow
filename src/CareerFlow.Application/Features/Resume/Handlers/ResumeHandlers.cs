@@ -242,8 +242,9 @@ public class PublishResumeHandler : IRequestHandler<PublishResumeCommand>
         var person = await _personRepo.GetByIdAsync(personId, ct)
             ?? throw new NotFoundException("Perfil");
 
-        if (!person.CanGenerateResume())
-            throw new DomainException("Perfil não atinge os requisitos mínimos para publicação (60% completo)");
+        var missingReqs = person.GetMissingResumeRequirements();
+        if (missingReqs.Count > 0)
+            throw new DomainException($"Perfil não atinge os requisitos mínimos para publicação. Itens pendentes: {string.Join(", ", missingReqs)}");
 
         person.SetPublic(true);
 
@@ -286,8 +287,9 @@ public class GenerateResumeHandler : IRequestHandler<GenerateResumeCommand, byte
         var person = await _personRepo.GetFullProfileAsync(personId, ct)
             ?? throw new NotFoundException("Perfil");
 
-        if (!person.CanGenerateResume())
-            throw new DomainException("Perfil não atinge os requisitos mínimos para gerar currículo (60% completo)");
+        var missingReqs = person.GetMissingResumeRequirements();
+        if (missingReqs.Count > 0)
+            throw new DomainException($"Perfil não atinge os requisitos mínimos para gerar currículo. Itens pendentes: {string.Join(", ", missingReqs)}");
 
         var resumeData = ResumeMapper.MapToResumeData(person);
         var pdf = await _pdfGenerator.GenerateResumePdfAsync(resumeData, ct);
@@ -333,8 +335,9 @@ public class GenerateAtsResumeHandler : IRequestHandler<GenerateAtsResumeCommand
         var person = await _personRepo.GetFullProfileAsync(personId, ct)
             ?? throw new NotFoundException("Perfil");
 
-        if (!person.CanGenerateResume())
-            throw new DomainException("Perfil não atinge os requisitos mínimos para gerar currículo (60% completo)");
+        var missingReqs = person.GetMissingResumeRequirements();
+        if (missingReqs.Count > 0)
+            throw new DomainException($"Perfil não atinge os requisitos mínimos para gerar currículo ATS. Itens pendentes: {string.Join(", ", missingReqs)}");
 
         var resumeData = ResumeMapper.MapToResumeData(person);
         var pdf = await _pdfGenerator.GenerateAtsResumePdfAsync(resumeData, ct);

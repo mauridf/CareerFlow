@@ -45,6 +45,7 @@ public record UpdateExperienceCommand(
     DateTime StartDate,
     DateTime? EndDate,
     string? Description,
+    List<Guid>? SkillsUsed,
     string? City,
     string? State,
     EmploymentType? EmploymentType) : IRequest<ExperienceResponse>;

@@ -94,6 +94,7 @@ public class ExperiencesController : ControllerBase
             request.StartDate,
             request.EndDate,
             request.Description,
+            request.SkillsUsed,
             request.City,
             request.State,
             request.EmploymentType);
