@@ -143,6 +143,57 @@ public class TokenService : ITokenService
         }
     }
 
+    public Task<TokenValidationResult> ExtractClaimsFromTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+
+        try
+        {
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(_secretKeyBytes),
+                ValidateIssuer = true,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = _jwtSettings.Audience,
+                ValidateLifetime = false,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+
+            if (validatedToken is not JwtSecurityToken jwtToken)
+            {
+                return Task.FromResult(new TokenValidationResult
+                {
+                    IsValid = false,
+                    Error = "Token inválido"
+                });
+            }
+
+            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
+            var role = principal.FindFirst(ClaimTypes.Role)?.Value;
+
+            return Task.FromResult(new TokenValidationResult
+            {
+                IsValid = true,
+                UserId = userId != null ? Guid.Parse(userId) : null,
+                Email = email,
+                Role = role
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TokenValidationResult
+            {
+                IsValid = false,
+                Error = ex.Message
+            });
+        }
+    }
+
     public string GenerateEmailVerificationToken(User user)
     {
         return GeneratePurposeToken(user, "email_verification", 48);

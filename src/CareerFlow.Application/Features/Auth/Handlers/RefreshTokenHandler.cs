@@ -32,7 +32,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, AuthResp
     {
         _logger.LogInformation("🔄 Tentativa de refresh token");
 
-        var validation = await _tokenService.ValidateAccessTokenAsync(command.AccessToken, cancellationToken);
+        var validation = await _tokenService.ExtractClaimsFromTokenAsync(command.AccessToken, cancellationToken);
 
         if (!validation.IsValid || validation.UserId == null)
             throw new UnauthorizedException("Token de acesso inválido ou expirado");
