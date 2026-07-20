@@ -1,9 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Application.Features.Profile.Commands;
 using CareerFlow.Application.Features.Profile.DTOs;
 using CareerFlow.Application.Features.Profile.Queries;
+using CareerFlow.Core.Exceptions;
+using CareerFlow.Core.Interfaces;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -17,11 +20,22 @@ public class ProfileController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<ProfileController> _logger;
+    private readonly IPersonRepository _personRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUser;
 
-    public ProfileController(IMediator mediator, ILogger<ProfileController> logger)
+    public ProfileController(
+        IMediator mediator,
+        ILogger<ProfileController> logger,
+        IPersonRepository personRepository,
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUser)
     {
         _mediator = mediator;
         _logger = logger;
+        _personRepository = personRepository;
+        _unitOfWork = unitOfWork;
+        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -127,6 +141,19 @@ public class ProfileController : ControllerBase
 
         var photoUrl = $"/uploads/photos/{fileName}";
 
+        // Atualiza a URL da foto no perfil do usuário
+        var userId = _currentUser.UserId;
+        if (userId.HasValue)
+        {
+            var person = await _personRepository.GetByUserIdAsync(userId.Value, cancellationToken: default);
+            if (person != null)
+            {
+                person.UpdatePhoto(photoUrl);
+                _personRepository.Update(person);
+                await _unitOfWork.SaveChangesAsync(default);
+            }
+        }
+
         _logger.LogInformation("📸 Foto de perfil enviada: {FileName}", fileName);
 
         return Ok(new
@@ -142,9 +169,22 @@ public class ProfileController : ControllerBase
     /// </summary>
     [HttpDelete("photo")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult DeletePhoto()
+    public async Task<IActionResult> DeletePhoto()
     {
         _logger.LogInformation("🗑️ Foto de perfil removida");
+
+        // Remove a URL da foto no perfil do usuário
+        var userId = _currentUser.UserId;
+        if (userId.HasValue)
+        {
+            var person = await _personRepository.GetByUserIdAsync(userId.Value, cancellationToken: default);
+            if (person != null)
+            {
+                person.RemovePhoto();
+                _personRepository.Update(person);
+                await _unitOfWork.SaveChangesAsync(default);
+            }
+        }
 
         return Ok(new
         {
