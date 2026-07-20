@@ -62,33 +62,44 @@ public class Person : AggregateRoot<Guid>
         DateTime? birthDate,
         string? professionalSummary)
     {
-        if (!string.IsNullOrWhiteSpace(professionalSummary))
+        if (professionalSummary != null)
         {
-            if (professionalSummary.Length < 100)
-                throw new DomainException("Resumo profissional deve ter no mínimo 100 caracteres");
+            if (!string.IsNullOrWhiteSpace(professionalSummary))
+            {
+                if (professionalSummary.Length < 100)
+                    throw new DomainException("Resumo profissional deve ter no mínimo 100 caracteres");
 
-            if (professionalSummary.Length > 2000)
-                throw new DomainException("Resumo profissional deve ter no máximo 2000 caracteres");
+                if (professionalSummary.Length > 2000)
+                    throw new DomainException("Resumo profissional deve ter no máximo 2000 caracteres");
+            }
+            ProfessionalSummary = string.IsNullOrWhiteSpace(professionalSummary) ? null : professionalSummary.Trim();
         }
 
-        if (birthDate.HasValue && birthDate.Value > DateTime.Now.AddYears(-14))
-            throw new DomainException("Usuário deve ter pelo menos 14 anos");
-
-        // Valida e formata o telefone se fornecido
-        if (!string.IsNullOrWhiteSpace(phone))
+        if (birthDate.HasValue)
         {
-            var phoneVO = new ValueObjects.PhoneNumber(phone);
-            Phone = phoneVO.Value;
-        }
-        else
-        {
-            Phone = null;
+            if (birthDate.Value > DateTime.Now.AddYears(-14))
+                throw new DomainException("Usuário deve ter pelo menos 14 anos");
+            BirthDate = birthDate;
         }
 
-        City = city?.Trim();
-        State = state?.Trim()?.ToUpper();
-        BirthDate = birthDate;
-        ProfessionalSummary = professionalSummary?.Trim();
+        if (phone != null)
+        {
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var phoneVO = new ValueObjects.PhoneNumber(phone);
+                Phone = phoneVO.Value;
+            }
+            else
+            {
+                Phone = null;
+            }
+        }
+
+        if (city != null)
+            City = string.IsNullOrWhiteSpace(city) ? null : city.Trim();
+
+        if (state != null)
+            State = string.IsNullOrWhiteSpace(state) ? null : state.Trim().ToUpper();
 
         MarkAsUpdated();
         AddDomainEvent(new ProfileUpdatedEvent(Id));
@@ -96,8 +107,10 @@ public class Person : AggregateRoot<Guid>
 
     public void UpdateCurrentProfession(string? position, string? company)
     {
-        CurrentPosition = position?.Trim();
-        CurrentCompany = company?.Trim();
+        if (position != null)
+            CurrentPosition = string.IsNullOrWhiteSpace(position) ? null : position.Trim();
+        if (company != null)
+            CurrentCompany = string.IsNullOrWhiteSpace(company) ? null : company.Trim();
         MarkAsUpdated();
     }
 

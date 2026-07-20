@@ -36,6 +36,10 @@ Log.Information("📅 Data/Hora: {DateTime}", DateTimeOffset.Now);
 
 try
 {
+    // Configura Npgsql para aceitar DateTime com Kind=Unspecified
+    // (necessário pois o frontend envia datas sem timezone como "2024-01-01")
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
     var builder = WebApplication.CreateBuilder(args);
 
     // ============================================
