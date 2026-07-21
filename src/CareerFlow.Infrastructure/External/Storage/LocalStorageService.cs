@@ -60,8 +60,4 @@ public class LocalStorageService : IStorageService
         var extension = Path.GetExtension(originalFileName);
         return $"{Guid.NewGuid()}{extension}";
     }
-}</think>Agora vou criar os 3 arquivos em paralelo:
-
-<｜DSML｜tool_calls>
-<｜DSML｜invoke name="write">
-<｜DSML｜parameter name="filePath" string="true">C:\Projetos\.NET\CareerFlow\src\CareerFlow.Infrastructure\External\Storage\LocalStorageService.cs
+}

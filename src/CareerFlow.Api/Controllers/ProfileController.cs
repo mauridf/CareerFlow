@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Api.Helpers;
+using CareerFlow.Application.Common.DTOs;
 using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Application.Features.Profile.Commands;
 using CareerFlow.Application.Features.Profile.DTOs;

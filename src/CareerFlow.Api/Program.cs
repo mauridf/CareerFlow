@@ -188,7 +188,7 @@ try
 
             var retryAfter = context.Lease.TryGetMetadata(
                 System.Threading.RateLimiting.MetadataName.RetryAfter, out var retryAfterValue)
-                ? retryAfterValue?.TotalSeconds.ToString()
+                ? retryAfterValue.TotalSeconds.ToString()
                 : "60";
 
             var errorResponse = new
