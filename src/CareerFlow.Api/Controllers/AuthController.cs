@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using CareerFlow.Api.Helpers;
 using CareerFlow.Application.Features.Auth.Commands;
 using CareerFlow.Application.Features.Auth.DTOs;
 using CareerFlow.Core.Interfaces;
@@ -33,6 +35,7 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("Register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -45,12 +48,7 @@ public class AuthController : ControllerBase
 
         _logger.LogInformation("✅ Usuário registrado: {UserId}", result.UserId);
 
-        return Created($"/api/v1/users/{result.UserId}", new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.CreatedResponse($"/api/v1/users/{result.UserId}", result, HttpContext);
     }
 
     /// <summary>
@@ -58,6 +56,7 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("Login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -69,12 +68,7 @@ public class AuthController : ControllerBase
 
         _logger.LogInformation("✅ Login bem-sucedido: {UserId}", result.UserId);
 
-        return Ok(new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -89,12 +83,7 @@ public class AuthController : ControllerBase
         var command = new RefreshTokenCommand(request.AccessToken, request.RefreshToken);
         var result = await _mediator.Send(command);
 
-        return Ok(new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -118,12 +107,7 @@ public class AuthController : ControllerBase
             IsPremium = _currentUser.IsPremium
         };
 
-        return Ok(new
-        {
-            success = true,
-            data = profile,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.OkResponse(profile, HttpContext);
     }
 
     /// <summary>
@@ -138,12 +122,7 @@ public class AuthController : ControllerBase
 
         await _mediator.Send(new ForgotPasswordCommand(request.Email));
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Se o email existir, um link de recuperação será enviado." },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Se o email existir, um link de recuperação será enviado.", HttpContext);
     }
 
     /// <summary>
@@ -157,12 +136,7 @@ public class AuthController : ControllerBase
     {
         await _mediator.Send(new ResetPasswordCommand(request.Token, request.NewPassword));
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Senha redefinida com sucesso." },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Senha redefinida com sucesso.", HttpContext);
     }
 
     /// <summary>
@@ -176,12 +150,7 @@ public class AuthController : ControllerBase
     {
         await _mediator.Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword));
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Senha alterada com sucesso." },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Senha alterada com sucesso.", HttpContext);
     }
 
     /// <summary>
@@ -197,12 +166,7 @@ public class AuthController : ControllerBase
 
         await _mediator.Send(new VerifyEmailCommand(request.Token));
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Email verificado com sucesso." },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Email verificado com sucesso.", HttpContext);
     }
 
     /// <summary>
@@ -218,11 +182,6 @@ public class AuthController : ControllerBase
 
         await _mediator.Send(new ResendVerificationCommand());
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Email de verificação reenviado." },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Email de verificação reenviado.", HttpContext);
     }
 }

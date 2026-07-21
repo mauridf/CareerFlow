@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Skills.Commands;
 using CareerFlow.Application.Features.Skills.DTOs;
 using CareerFlow.Application.Features.Skills.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -32,7 +33,7 @@ public class SkillsController : ControllerBase
     public async Task<IActionResult> GetSkills()
     {
         var result = await _mediator.Send(new GetSkillsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -43,7 +44,7 @@ public class SkillsController : ControllerBase
     public async Task<IActionResult> GetSkillCategories()
     {
         var result = await _mediator.Send(new GetSkillCategoriesQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -66,12 +67,7 @@ public class SkillsController : ControllerBase
 
         _logger.LogInformation("✅ Habilidade criada: {SkillName}", request.Name);
 
-        return Created($"/api/v1/profile/skills/{result.Id}", new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/skills/{result.Id}", result, HttpContext);
     }
 
     /// <summary>
@@ -92,7 +88,7 @@ public class SkillsController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -117,11 +113,6 @@ public class SkillsController : ControllerBase
     {
         await _mediator.Send(new ReorderSkillsCommand(request.Skills));
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Habilidades reordenadas com sucesso" },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Habilidades reordenadas com sucesso", HttpContext);
     }
 }

@@ -1,26 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using CareerFlow.Core.Enums;
 using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Scheduler.Jobs;
 
-/// <summary>
-/// Job que verifica e processa expiração de planos premium.
-/// Execução: Diária às 04:00
-/// </summary>
 [DisallowConcurrentExecution]
 public class PremiumExpirationJob : IJob
 {
-    private readonly CareerFlowDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PremiumExpirationJob> _logger;
 
     public PremiumExpirationJob(
-        CareerFlowDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         ILogger<PremiumExpirationJob> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -31,23 +26,24 @@ public class PremiumExpirationJob : IJob
 
         try
         {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlowDbContext>();
+
             var now = DateTime.UtcNow;
 
-            // Busca usuários premium expirados
-            var expiredUsers = await _dbContext.Users
+            var expiredUsers = await dbContext.Users
                 .Where(u => u.IsPremium
                     && u.PremiumUntil.HasValue
                     && u.PremiumUntil.Value <= now)
                 .ToListAsync(context.CancellationToken);
 
-            _logger.LogInformation("⭐ [{JobName}] {Count} planos premium expirados", jobName, expiredUsers.Count);
+            _logger.LogInformation("⭐ [{JobName}] {Count} planos premium expirados encontrados", jobName, expiredUsers.Count);
 
             foreach (var user in expiredUsers)
             {
                 user.DeactivatePremium();
 
-                // Registra atividade
-                _dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
+                dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id,
@@ -59,17 +55,16 @@ public class PremiumExpirationJob : IJob
                     UpdatedAt = DateTime.UtcNow
                 });
 
-                _logger.LogInformation("⭐ [{JobName}] Premium expirado para: {Email}", jobName, user.Email);
+                _logger.LogInformation("⭐ [{JobName}] Premium desativado para: {Email}", jobName, user.Email);
             }
 
             if (expiredUsers.Count > 0)
             {
-                await _dbContext.SaveChangesAsync(context.CancellationToken);
+                await dbContext.SaveChangesAsync(context.CancellationToken);
             }
 
-            // Avisa usuários que expiram em 7 dias
             var sevenDaysFromNow = now.AddDays(7);
-            var expiringSoon = await _dbContext.Users
+            var expiringSoon = await dbContext.Users
                 .Where(u => u.IsPremium
                     && u.PremiumUntil.HasValue
                     && u.PremiumUntil.Value > now
@@ -78,7 +73,6 @@ public class PremiumExpirationJob : IJob
 
             foreach (var user in expiringSoon)
             {
-                // TODO: Enviar email de aviso
                 _logger.LogInformation(
                     "⭐ [{JobName}] Premium expira em breve: {Email} - {Days} dias restantes",
                     jobName, user.Email, (user.PremiumUntil!.Value - now).Days);

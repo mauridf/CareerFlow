@@ -1,10 +1,12 @@
 using CareerFlow.Core.Interfaces;
+using CareerFlow.Core.Interfaces.Settings;
 using CareerFlow.Infrastructure.Data;
 using CareerFlow.Infrastructure.Data.Interceptors;
 using CareerFlow.Infrastructure.External.Analytics;
 using CareerFlow.Infrastructure.External.Cache;
 using CareerFlow.Infrastructure.External.Email;
 using CareerFlow.Infrastructure.External.PDF;
+using CareerFlow.Infrastructure.External.Storage;
 using CareerFlow.Infrastructure.Outbox;
 using CareerFlow.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +85,12 @@ public static class DependencyInjection
         // Outbox Processor (Singleton - Timer interno)
         // ============================================
         services.AddSingleton<OutboxProcessor>();
+
+        // ============================================
+        // Storage
+        // ============================================
+        services.Configure<StorageSettings>(configuration.GetSection(StorageSettings.SectionName));
+        services.AddScoped<IStorageService, LocalStorageService>();
 
         // ============================================
         // Health Checks

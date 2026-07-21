@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Admin.DTOs;
 using CareerFlow.Application.Features.Admin.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers.Admin;
 
@@ -15,34 +16,34 @@ public class AdminDashboardController : AdminBaseController
     public async Task<IActionResult> GetSystemStats()
     {
         var result = await _mediator.Send(new GetSystemStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("stats/users")]
     public async Task<IActionResult> GetUsersStats()
     {
         var result = await _mediator.Send(new GetAdminUsersStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("stats/resumes")]
     public async Task<IActionResult> GetResumesStats()
     {
         var result = await _mediator.Send(new GetAdminResumesStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("stats/views")]
     public async Task<IActionResult> GetViewsStats()
     {
         var result = await _mediator.Send(new GetAdminViewsStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("stats/ats-scores")]
     public async Task<IActionResult> GetAtsScoresStats()
     {
         var result = await _mediator.Send(new GetAdminAtsScoresStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 }

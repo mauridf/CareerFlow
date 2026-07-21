@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Education.Commands;
 using CareerFlow.Application.Features.Education.DTOs;
 using CareerFlow.Application.Features.Education.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -32,7 +33,7 @@ public class EducationController : ControllerBase
     public async Task<IActionResult> GetEducation()
     {
         var result = await _mediator.Send(new GetEducationQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -58,12 +59,7 @@ public class EducationController : ControllerBase
 
         _logger.LogInformation("✅ Formação criada: {Institution} - {Course}", request.Institution, request.Course);
 
-        return Created($"/api/v1/profile/education/{result.Id}", new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/education/{result.Id}", result, HttpContext);
     }
 
     /// <summary>
@@ -88,7 +84,7 @@ public class EducationController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>

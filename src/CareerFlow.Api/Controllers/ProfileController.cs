@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CareerFlow.Api.Helpers;
 using CareerFlow.Application.Common.Interfaces;
 using CareerFlow.Application.Features.Profile.Commands;
 using CareerFlow.Application.Features.Profile.DTOs;
@@ -23,19 +24,22 @@ public class ProfileController : ControllerBase
     private readonly IPersonRepository _personRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
+    private readonly IStorageService _storageService;
 
     public ProfileController(
         IMediator mediator,
         ILogger<ProfileController> logger,
         IPersonRepository personRepository,
         IUnitOfWork unitOfWork,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IStorageService storageService)
     {
         _mediator = mediator;
         _logger = logger;
         _personRepository = personRepository;
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
+        _storageService = storageService;
     }
 
     /// <summary>
@@ -48,7 +52,7 @@ public class ProfileController : ControllerBase
     {
         var result = await _mediator.Send(new GetProfileQuery());
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -70,7 +74,7 @@ public class ProfileController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        return Created($"/api/v1/profile", new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile", result, HttpContext);
     }
 
     /// <summary>
@@ -91,7 +95,7 @@ public class ProfileController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -103,7 +107,7 @@ public class ProfileController : ControllerBase
     {
         var result = await _mediator.Send(new GetProfileCompletionQuery());
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -115,33 +119,31 @@ public class ProfileController : ControllerBase
     public async Task<IActionResult> UploadPhoto(IFormFile photo)
     {
         if (photo == null || photo.Length == 0)
-            return BadRequest(new { success = false, error = new { code = "VALIDATION_ERROR", message = "Foto é obrigatória" } });
+            return BadRequest(new ErrorResponse
+            {
+                Error = new ErrorDetail { Code = "VALIDATION_ERROR", Message = "Foto é obrigatória" },
+                Meta = new MetaResponse { Timestamp = DateTime.UtcNow, RequestId = HttpContext.TraceIdentifier }
+            });
 
-        // Valida tamanho (máx 5MB)
         if (photo.Length > 5 * 1024 * 1024)
-            return BadRequest(new { success = false, error = new { code = "VALIDATION_ERROR", message = "Foto deve ter no máximo 5MB" } });
+            return BadRequest(new ErrorResponse
+            {
+                Error = new ErrorDetail { Code = "VALIDATION_ERROR", Message = "Foto deve ter no máximo 5MB" },
+                Meta = new MetaResponse { Timestamp = DateTime.UtcNow, RequestId = HttpContext.TraceIdentifier }
+            });
 
-        // Valida formato
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
         var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
-            return BadRequest(new { success = false, error = new { code = "VALIDATION_ERROR", message = "Formato inválido. Use JPG, PNG ou WebP" } });
+            return BadRequest(new ErrorResponse
+            {
+                Error = new ErrorDetail { Code = "VALIDATION_ERROR", Message = "Formato inválido. Use JPG, PNG ou WebP" },
+                Meta = new MetaResponse { Timestamp = DateTime.UtcNow, RequestId = HttpContext.TraceIdentifier }
+            });
 
-        // Salva arquivo localmente
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "photos");
-        Directory.CreateDirectory(uploadsFolder);
+        await using var stream = photo.OpenReadStream();
+        var photoUrl = await _storageService.UploadAsync(photo.FileName, stream, photo.ContentType, "photos");
 
-        var fileName = $"{Guid.NewGuid()}{extension}";
-        var filePath = Path.Combine(uploadsFolder, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await photo.CopyToAsync(stream);
-        }
-
-        var photoUrl = $"/uploads/photos/{fileName}";
-
-        // Atualiza a URL da foto no perfil do usuário
         var userId = _currentUser.UserId;
         if (userId.HasValue)
         {
@@ -154,14 +156,9 @@ public class ProfileController : ControllerBase
             }
         }
 
-        _logger.LogInformation("📸 Foto de perfil enviada: {FileName}", fileName);
+        _logger.LogInformation("📸 Foto de perfil enviada: {PhotoUrl}", photoUrl);
 
-        return Ok(new
-        {
-            success = true,
-            data = new { photoUrl },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.OkResponse(new { photoUrl }, HttpContext);
     }
 
     /// <summary>
@@ -173,7 +170,6 @@ public class ProfileController : ControllerBase
     {
         _logger.LogInformation("🗑️ Foto de perfil removida");
 
-        // Remove a URL da foto no perfil do usuário
         var userId = _currentUser.UserId;
         if (userId.HasValue)
         {
@@ -186,11 +182,6 @@ public class ProfileController : ControllerBase
             }
         }
 
-        return Ok(new
-        {
-            success = true,
-            data = new { message = "Foto removida com sucesso" },
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.MessageResponse("Foto removida com sucesso", HttpContext);
     }
 }

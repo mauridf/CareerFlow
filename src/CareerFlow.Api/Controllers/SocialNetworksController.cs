@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.SocialNetworks.Commands;
 using CareerFlow.Application.Features.SocialNetworks.DTOs;
 using CareerFlow.Application.Features.SocialNetworks.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -20,7 +21,7 @@ public class SocialNetworksController : ControllerBase
     public async Task<IActionResult> GetSocialNetworks()
     {
         var result = await _mediator.Send(new GetSocialNetworksQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpPost]
@@ -28,7 +29,7 @@ public class SocialNetworksController : ControllerBase
     {
         var cmd = new CreateSocialNetworkCommand(request.NetworkType, request.Url, request.DisplayOrder);
         var result = await _mediator.Send(cmd);
-        return Created($"/api/v1/profile/social-networks/{result.Id}", new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/social-networks/{result.Id}", result, HttpContext);
     }
 
     [HttpPut("{id:guid}")]
@@ -36,7 +37,7 @@ public class SocialNetworksController : ControllerBase
     {
         var cmd = new UpdateSocialNetworkCommand(id, request.NetworkType, request.Url, request.DisplayOrder);
         var result = await _mediator.Send(cmd);
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpDelete("{id:guid}")]

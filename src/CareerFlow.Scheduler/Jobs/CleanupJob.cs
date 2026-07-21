@@ -5,22 +5,17 @@ using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Scheduler.Jobs;
 
-/// <summary>
-/// Job que realiza limpeza de dados antigos.
-/// Remove logs antigos, outbox messages processadas e dados temporários.
-/// Execução: Todo domingo às 03:00
-/// </summary>
 [DisallowConcurrentExecution]
 public class CleanupJob : IJob
 {
-    private readonly CareerFlowDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CleanupJob> _logger;
 
     public CleanupJob(
-        CareerFlowDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         ILogger<CleanupJob> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -31,55 +26,84 @@ public class CleanupJob : IJob
 
         try
         {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlowDbContext>();
+
             var cleanedItems = 0;
 
-            // 1. Remove outbox messages processadas com mais de 7 dias
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
-            var processedMessages = await _dbContext.OutboxMessages
+            var processedMessages = await dbContext.OutboxMessages
                 .Where(m => m.Status == "processed" && m.ProcessedAt < sevenDaysAgo)
                 .ToListAsync(context.CancellationToken);
 
-            _dbContext.OutboxMessages.RemoveRange(processedMessages);
+            dbContext.OutboxMessages.RemoveRange(processedMessages);
             cleanedItems += processedMessages.Count;
             _logger.LogInformation("🧹 [{JobName}] {Count} outbox messages removidas", jobName, processedMessages.Count);
 
-            // 2. Remove activity logs com mais de 90 dias
             var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
-            var oldLogs = await _dbContext.ActivityLogs
+            var oldLogs = await dbContext.ActivityLogs
                 .Where(l => l.CreatedAt < ninetyDaysAgo)
-                .Take(1000) // Limita para não travar o banco
+                .Take(1000)
                 .ToListAsync(context.CancellationToken);
 
-            _dbContext.ActivityLogs.RemoveRange(oldLogs);
+            dbContext.ActivityLogs.RemoveRange(oldLogs);
             cleanedItems += oldLogs.Count;
             _logger.LogInformation("🧹 [{JobName}] {Count} activity logs removidos", jobName, oldLogs.Count);
 
-            // 3. Remove resume views com mais de 180 dias
-            var sixMonthsAgo = DateTime.UtcNow.AddDays(-180);
-            var oldViews = await _dbContext.ResumeViews
-                .Where(v => v.CreatedAt < sixMonthsAgo)
+            var oneYearAgo = DateTime.UtcNow.AddDays(-365);
+            var oldViews = await dbContext.ResumeViews
+                .Where(v => v.CreatedAt < oneYearAgo)
                 .Take(5000)
                 .ToListAsync(context.CancellationToken);
 
-            _dbContext.ResumeViews.RemoveRange(oldViews);
+            dbContext.ResumeViews.RemoveRange(oldViews);
             cleanedItems += oldViews.Count;
-            _logger.LogInformation("🧹 [{JobName}] {Count} resume views removidas", jobName, oldViews.Count);
+            _logger.LogInformation("🧹 [{JobName}] {Count} resume views antigas removidas", jobName, oldViews.Count);
 
-            // 4. Remove usuários com soft delete há mais de 90 dias (LGPD)
-            var oldDeletedUsers = await _dbContext.Users
+            var oldDeletedUsers = await dbContext.Users
                 .Where(u => u.DeletedAt.HasValue && u.DeletedAt < ninetyDaysAgo)
                 .ToListAsync(context.CancellationToken);
 
             if (oldDeletedUsers.Count > 0)
             {
-                _dbContext.Users.RemoveRange(oldDeletedUsers);
+                dbContext.Users.RemoveRange(oldDeletedUsers);
                 cleanedItems += oldDeletedUsers.Count;
                 _logger.LogInformation("🧹 [{JobName}] {Count} usuários deletados permanentemente (LGPD)",
                     jobName, oldDeletedUsers.Count);
             }
 
-            // Salva todas as alterações
-            await _dbContext.SaveChangesAsync(context.CancellationToken);
+            await dbContext.SaveChangesAsync(context.CancellationToken);
+
+            var tempDir = Path.Combine(Path.GetTempPath(), "CareerFlow");
+            if (Directory.Exists(tempDir))
+            {
+                var tempCutoff = DateTime.UtcNow.AddDays(-7);
+                var deletedFiles = 0;
+
+                foreach (var file in Directory.GetFiles(tempDir, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        if (File.GetLastWriteTimeUtc(file) < tempCutoff)
+                        {
+                            File.Delete(file);
+                            deletedFiles++;
+                        }
+                    }
+                    catch { }
+                }
+
+                foreach (var dir in Directory.GetDirectories(tempDir, "*", SearchOption.AllDirectories).Reverse())
+                {
+                    if (!Directory.EnumerateFileSystemEntries(dir).Any())
+                    {
+                        Directory.Delete(dir);
+                    }
+                }
+
+                _logger.LogInformation("🧹 [{JobName}] {Count} arquivos temporários removidos", jobName, deletedFiles);
+                cleanedItems += deletedFiles;
+            }
 
             _logger.LogInformation("✅ [{JobName}] Limpeza concluída: {Total} itens removidos", jobName, cleanedItems);
         }

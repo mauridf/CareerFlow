@@ -1,8 +1,10 @@
 using System.Text;
+using System.Text.Json;
 using CareerFlow.Api.Extensions;
 using CareerFlow.Api.Middlewares;
 using CareerFlow.Api.Services;
 using CareerFlow.Application;
+using CareerFlow.Application.Common.DTOs;
 using CareerFlow.Core.Interfaces;
 using CareerFlow.Core.Interfaces.Settings;
 using CareerFlow.Infrastructure;
@@ -178,6 +180,40 @@ try
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.HttpContext.Response.ContentType = "application/json";
+
+            var retryAfter = context.Lease.TryGetMetadata(
+                System.Threading.RateLimiting.MetadataName.RetryAfter, out var retryAfterValue)
+                ? retryAfterValue?.TotalSeconds.ToString()
+                : "60";
+
+            var errorResponse = new
+            {
+                success = false,
+                error = new
+                {
+                    code = "RATE_LIMIT",
+                    message = "Muitas requisições. Aguarde um momento e tente novamente."
+                },
+                meta = new
+                {
+                    timestamp = DateTime.UtcNow,
+                    requestId = context.HttpContext.TraceIdentifier,
+                    retryAfter = retryAfter
+                }
+            };
+
+            var json = JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            await context.HttpContext.Response.WriteAsync(json, cancellationToken);
+        };
 
         // Login: 5 tentativas por minuto
         options.AddFixedWindowLimiter("Login", config =>

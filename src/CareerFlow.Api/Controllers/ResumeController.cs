@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Resume.Commands;
 using CareerFlow.Application.Features.Resume.DTOs;
 using CareerFlow.Application.Features.Resume.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -24,14 +25,14 @@ public class ResumeController : ControllerBase
     public async Task<IActionResult> GetResume()
     {
         var result = await _mediator.Send(new GetResumeQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("analytics")]
     public async Task<IActionResult> GetAnalytics()
     {
         var result = await _mediator.Send(new GetResumeAnalyticsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpPost("share")]
@@ -39,21 +40,21 @@ public class ResumeController : ControllerBase
     {
         var link = await _mediator.Send(new ShareResumeCommand());
         _logger.LogInformation("📤 Currículo compartilhado: {Link}", link);
-        return Ok(new { success = true, data = new { shareLink = link }, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(new { shareLink = link }, HttpContext);
     }
 
     [HttpPut("publish")]
     public async Task<IActionResult> Publish()
     {
         await _mediator.Send(new PublishResumeCommand());
-        return Ok(new { success = true, data = new { message = "Currículo publicado com sucesso" }, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.MessageResponse("Currículo publicado com sucesso", HttpContext);
     }
 
     [HttpPut("unpublish")]
     public async Task<IActionResult> Unpublish()
     {
         await _mediator.Send(new UnpublishResumeCommand());
-        return Ok(new { success = true, data = new { message = "Currículo despublicado" }, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.MessageResponse("Currículo despublicado", HttpContext);
     }
 
     [HttpPost("generate")]
@@ -74,20 +75,20 @@ public class ResumeController : ControllerBase
     public async Task<IActionResult> Analyze()
     {
         var result = await _mediator.Send(new AnalyzeResumeCommand());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("suggestions")]
     public async Task<IActionResult> GetSuggestions()
     {
         var result = await _mediator.Send(new GetResumeSuggestionsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpPost("suggestions/generate")]
     public async Task<IActionResult> GenerateSuggestions()
     {
         var result = await _mediator.Send(new GenerateResumeSuggestionsCommand());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 }

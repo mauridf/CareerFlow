@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Languages.Commands;
 using CareerFlow.Application.Features.Languages.DTOs;
 using CareerFlow.Application.Features.Languages.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -20,7 +21,7 @@ public class LanguagesController : ControllerBase
     public async Task<IActionResult> GetLanguages()
     {
         var result = await _mediator.Send(new GetLanguagesQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpPost]
@@ -28,7 +29,7 @@ public class LanguagesController : ControllerBase
     {
         var cmd = new CreateLanguageCommand(request.LanguageName, request.ProficiencyLevel, request.IsNative);
         var result = await _mediator.Send(cmd);
-        return Created($"/api/v1/profile/languages/{result.Id}", new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/languages/{result.Id}", result, HttpContext);
     }
 
     [HttpPut("{id:guid}")]
@@ -36,7 +37,7 @@ public class LanguagesController : ControllerBase
     {
         var cmd = new UpdateLanguageCommand(id, request.LanguageName, request.ProficiencyLevel, request.IsNative);
         var result = await _mediator.Send(cmd);
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpDelete("{id:guid}")]

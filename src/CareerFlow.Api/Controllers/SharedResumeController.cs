@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Resume.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -18,7 +19,7 @@ public class SharedResumeController : ControllerBase
     public async Task<IActionResult> GetPublicResume(string slug)
     {
         var result = await _mediator.Send(new GetPublicResumeQuery(slug));
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpGet("{slug}/pdf")]

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Certificates.Commands;
 using CareerFlow.Application.Features.Certificates.DTOs;
 using CareerFlow.Application.Features.Certificates.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -20,7 +21,7 @@ public class CertificatesController : ControllerBase
     public async Task<IActionResult> GetCertificates()
     {
         var result = await _mediator.Send(new GetCertificatesQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpPost]
@@ -29,7 +30,7 @@ public class CertificatesController : ControllerBase
         var cmd = new CreateCertificateCommand(request.Title, request.Issuer, request.IssueDate,
             request.ExpirationDate, request.CertificateId, request.CredentialId, request.CredentialUrl);
         var result = await _mediator.Send(cmd);
-        return Created($"/api/v1/profile/certificates/{result.Id}", new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/certificates/{result.Id}", result, HttpContext);
     }
 
     [HttpPut("{id:guid}")]
@@ -38,7 +39,7 @@ public class CertificatesController : ControllerBase
         var cmd = new UpdateCertificateCommand(id, request.Title, request.Issuer, request.IssueDate,
             request.ExpirationDate, request.CertificateId, request.CredentialUrl);
         var result = await _mediator.Send(cmd);
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     [HttpDelete("{id:guid}")]

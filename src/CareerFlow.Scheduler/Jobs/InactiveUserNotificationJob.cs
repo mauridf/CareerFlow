@@ -5,21 +5,17 @@ using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Scheduler.Jobs;
 
-/// <summary>
-/// Job que notifica usuários inativos há mais de 30 dias.
-/// Execução: Dia 1 de cada mês às 09:00
-/// </summary>
 [DisallowConcurrentExecution]
 public class InactiveUserNotificationJob : IJob
 {
-    private readonly CareerFlowDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<InactiveUserNotificationJob> _logger;
 
     public InactiveUserNotificationJob(
-        CareerFlowDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         ILogger<InactiveUserNotificationJob> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -30,10 +26,12 @@ public class InactiveUserNotificationJob : IJob
 
         try
         {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlowDbContext>();
+
             var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 
-            // Busca usuários que não fazem login há 30 dias
-            var inactiveUsers = await _dbContext.Users
+            var inactiveUsers = await dbContext.Users
                 .Where(u => u.IsActive
                     && !u.DeletedAt.HasValue
                     && (u.LastLoginAt == null || u.LastLoginAt < thirtyDaysAgo))
@@ -47,13 +45,11 @@ public class InactiveUserNotificationJob : IJob
                     ? (DateTime.UtcNow - user.LastLoginAt.Value).Days
                     : 999;
 
-                // TODO: Integrar com serviço de envio de email
                 _logger.LogInformation(
-                    "🔔 [{JobName}] Notificação: {Email} - Inativo há {Days} dias",
+                    "🔔 [{JobName}] Notificação necessária: {Email} - Inativo há {Days} dias",
                     jobName, user.Email, daysSinceLastLogin);
 
-                // Registra atividade
-                _dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
+                dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id,
@@ -68,10 +64,10 @@ public class InactiveUserNotificationJob : IJob
 
             if (inactiveUsers.Count > 0)
             {
-                await _dbContext.SaveChangesAsync(context.CancellationToken);
+                await dbContext.SaveChangesAsync(context.CancellationToken);
             }
 
-            _logger.LogInformation("✅ [{JobName}] Notificações enviadas: {Count} usuários", jobName, inactiveUsers.Count);
+            _logger.LogInformation("✅ [{JobName}] Notificações processadas: {Count} usuários inativos", jobName, inactiveUsers.Count);
         }
         catch (Exception ex)
         {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Experiences.Commands;
 using CareerFlow.Application.Features.Experiences.DTOs;
 using CareerFlow.Application.Features.Experiences.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -32,7 +33,7 @@ public class ExperiencesController : ControllerBase
     public async Task<IActionResult> GetExperiences()
     {
         var result = await _mediator.Send(new GetExperiencesQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -44,7 +45,7 @@ public class ExperiencesController : ControllerBase
     public async Task<IActionResult> GetExperienceDetail(Guid id)
     {
         var result = await _mediator.Send(new GetExperienceDetailQuery(id));
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -71,12 +72,7 @@ public class ExperiencesController : ControllerBase
 
         _logger.LogInformation("✅ Experiência criada: {Company} - {Position}", request.CompanyName, request.Position);
 
-        return Created($"/api/v1/profile/experiences/{result.Id}", new
-        {
-            success = true,
-            data = result,
-            meta = new { timestamp = DateTime.UtcNow }
-        });
+        return ResponseHelper.CreatedResponse($"/api/v1/profile/experiences/{result.Id}", result, HttpContext);
     }
 
     /// <summary>
@@ -101,7 +97,7 @@ public class ExperiencesController : ControllerBase
 
         var result = await _mediator.Send(command);
 
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>

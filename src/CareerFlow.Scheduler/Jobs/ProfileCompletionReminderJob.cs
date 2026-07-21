@@ -5,21 +5,17 @@ using CareerFlow.Infrastructure.Data;
 
 namespace CareerFlow.Scheduler.Jobs;
 
-/// <summary>
-/// Job que envia lembretes para usuários com perfil incompleto.
-/// Execução: Toda segunda-feira às 08:00
-/// </summary>
 [DisallowConcurrentExecution]
 public class ProfileCompletionReminderJob : IJob
 {
-    private readonly CareerFlowDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProfileCompletionReminderJob> _logger;
 
     public ProfileCompletionReminderJob(
-        CareerFlowDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         ILogger<ProfileCompletionReminderJob> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -30,14 +26,18 @@ public class ProfileCompletionReminderJob : IJob
 
         try
         {
-            // Busca pessoas com perfil abaixo de 80%
-            var persons = await _dbContext.Persons
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CareerFlowDbContext>();
+
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+            var persons = await dbContext.Persons
                 .Include(p => p.User)
                 .Where(p => p.User != null && p.User.IsActive && !p.User.DeletedAt.HasValue)
                 .ToListAsync(context.CancellationToken);
 
             var incompleteProfiles = persons
-                .Where(p => p.CalculateCompletionPercentage() < 80)
+                .Where(p => p.CreatedAt < sevenDaysAgo && p.CalculateCompletionPercentage() < 60)
                 .ToList();
 
             _logger.LogInformation("📧 [{JobName}] {Count} perfis incompletos encontrados", jobName, incompleteProfiles.Count);
@@ -47,13 +47,11 @@ public class ProfileCompletionReminderJob : IJob
                 var completion = person.CalculateCompletionPercentage();
                 var user = person.User!;
 
-                // TODO: Integrar com serviço de envio de email
                 _logger.LogInformation(
-                    "📧 [{JobName}] Lembrete: Usuário {Email} - Perfil {Percentage}% completo",
-                    jobName, user.Email, completion);
+                    "📧 [{JobName}] Sugestão para {Email} - Perfil {Percentage}% completo (criado há {Days} dias)",
+                    jobName, user.Email, completion, (DateTime.UtcNow - person.CreatedAt).Days);
 
-                // Registra atividade
-                _dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
+                dbContext.ActivityLogs.Add(new CareerFlow.Core.Entities.ActivityLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id,
@@ -68,10 +66,10 @@ public class ProfileCompletionReminderJob : IJob
 
             if (incompleteProfiles.Count > 0)
             {
-                await _dbContext.SaveChangesAsync(context.CancellationToken);
+                await dbContext.SaveChangesAsync(context.CancellationToken);
             }
 
-            _logger.LogInformation("✅ [{JobName}] Lembretes processados: {Count} usuários", jobName, incompleteProfiles.Count);
+            _logger.LogInformation("✅ [{JobName}] Lembretes processados: {Count} usuários com perfil < 60%", jobName, incompleteProfiles.Count);
         }
         catch (Exception ex)
         {

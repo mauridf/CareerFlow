@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CareerFlow.Application.Features.Dashboard.DTOs;
 using CareerFlow.Application.Features.Dashboard.Queries;
+using CareerFlow.Api.Helpers;
 
 namespace CareerFlow.Api.Controllers;
 
@@ -26,7 +27,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetStats()
     {
         var result = await _mediator.Send(new GetDashboardStatsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -37,7 +38,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetInsights()
     {
         var result = await _mediator.Send(new GetResumeInsightsQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -48,7 +49,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetRecentActivity([FromQuery] int limit = 10)
     {
         var result = await _mediator.Send(new GetRecentActivityQuery(limit));
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -59,7 +60,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetViewsChart([FromQuery] int days = 30)
     {
         var result = await _mediator.Send(new GetViewsChartQuery(days));
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 
     /// <summary>
@@ -70,6 +71,6 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetSkillsGap()
     {
         var result = await _mediator.Send(new GetSkillsGapQuery());
-        return Ok(new { success = true, data = result, meta = new { timestamp = DateTime.UtcNow } });
+        return ResponseHelper.OkResponse(result, HttpContext);
     }
 }
